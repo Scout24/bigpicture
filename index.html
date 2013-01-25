@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+  <head>
+    <title>bigpicture | different views</title>
+    <link rel="stylesheet" type="text/css" href="view/css/hive.css" />
+    <style>
+      dd {margin-bottom: 1ex;}
+    </style>
+  </head>
+  <body>
+    <h1>bigpicture | different views</h1>
+
+    <h2>hive views</h2>
+    <dl>
+      <dt><a href='view/smallhives.html?mapping0={"prodA":1,"prodB":2}&mapping1={"testing":1,"prodA":2,"prodB":2}'>small multiple hives</a></dt>
+      <dd>table of multiple small hives, graphing different protocols using
+      different grouping algorithms<br/>
+      nodes get distributed on different axes based on a name mapping;<br/>
+      axis 0: 12-o-clock, axis 1: 4-o-clock, axis 2: 8-o-clock;<br/>
+      default: axis 0;<br/>
+      for example:
+      <pre>
+        mapping0={"prodA":1,"prodB":2}
+      </pre>
+      </dd>
+      <dt><a href='view/selfrefhives.html?mapping0={"prodA":1,"prodB":2}&mapping1={"testing":1,"prodA":2,"prodB":2}'>self-referencing hives</a></dt>
+      <dd>table of self-referencing hives, graphing the http protocol</dd>
+      <dt>
+      <dt>the <a href="view/data/connections.json">raw data</a></dt>
+      <dd>connection data in json format</dd>
+      <dt>some theory of hive plots</dt>
+      <dd>
+          <a href="http://www.hiveplot.net/">hiveplot.net</a> in general,
+          and an
+          <a href="http://bost.ocks.org/mike/hive/">example implementation</a> 
+          using <a href="http://d3js.org/">d3js</a>
+      </dd>
+    </dl>
+
+    <h2>graphviz views</h2>
+    <em>good examples for
+      <a href="http://eagereyes.org/techniques/graphs-hairball">hairballs</a>:
+    </em><br/>
+
+    <a href="view/netstat.neato.pdf">neato layout</a><br/>
+    <a href="view/netstat.twopi.pdf">twopi layout</a>
+
+    <h2>older tries</h2>
+    <em>not maintained any longer, just for reference:</em><br/>
+
+    <a href="view/matrix.html">matrix view</a>
+    <!--
+    <a href="force-collapsible.html">force-collapsible view</a>
+    -->
+  </body>
+</html>
