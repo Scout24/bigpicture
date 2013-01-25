@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+  <head>
+    <title>bigpicture | self-referencing hives</title>
+     <link rel="stylesheet" type="text/css" href="css/hive.css" />
+  </head>
+  <body>
+    <h1>bigpicture | self-referencing hives: http connections</h1>
+
+    <table>
+      <tr>
+        <th id="description0"></th>
+        <th id="description1"></th>
+      </tr>
+      <tr>
+        <td id="graph_0"></td>
+        <td id="graph_1"></td>
+      </tr>
+    </table>
+
+    <a href="index.html">index</a>
+
+    <script src="js/d3.v3.min.js"></script>
+    <script src="js/jquery-1.9.0.min.js"></script>
+    <script src="js/link.js"></script>
+    <script src="js/hive.js"></script>
+    <script>
+      var mapping0 = createGroupFunction(JSON.parse(getUrlVar("mapping0")));
+      var desc0 = mapping0.description;
+      $("#description0").html(desc0[0] + "<br>" + desc0[2] + "&nbsp;" + desc0[1]);
+
+      var mapping1 = createGroupFunction(JSON.parse(getUrlVar("mapping1")));
+      var desc1 = mapping1.description;
+      $("#description1").html(desc1[0] + "<br>" + desc1[2] + "&nbsp;" + desc1[1]);
+
+      addSelfConnectedHive("data/connections.json", "http", mapping0, "#graph_0");
+      addSelfConnectedHive("data/connections.json", "http", mapping1, "#graph_1");
+    </script>
+  </body>
+</html>

@@ -1,0 +1,46 @@
+body {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  margin: 1em 1em 4em 1em;
+  min-width: 960px;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.axis {
+  stroke: #555;
+  stroke-width: 3px;
+}
+.node {
+  stroke: #555;
+  stroke-width: 1px;
+}
+.node circle {
+}
+.node.active {
+  stroke: #f00;
+  stroke-width: 1.5px;
+}
+
+.link {
+  fill: none;
+  stroke: #999;
+  stroke-width: 1.5px;
+  stroke-opacity: .3;
+}
+.link.active {
+  stroke-width: 3px;
+  stroke-opacity: .6;
+}
+.node.selected {
+  stroke: #f00;
+  stroke-width: 3px;
+}
+.link.selected {
+  stroke-width: 3px;
+  stroke: #f00;
+  stroke-opacity: 1;
+}

@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+import logging
+import os
+import pygraphviz
+
+import bigpicture
+import bigpicture.dot
+
+
+logging.basicConfig(level=logging.INFO)
+
+with open(os.path.join(bigpicture.OUT_DIR, "connections.json"), "w") as json_file:
+    json_file.write(bigpicture.dot.dot2json(bigpicture.DOT_FILE))
+
+for layout in ["neato", "twopi"]:    # dot: takes too long for large graphs
+    logging.info("rendering graph in %s layout" % layout)
+    graph = pygraphviz.AGraph(bigpicture.DOT_FILE)
+    graph.graph_attr.update(size='40,30')
+    graph.node_attr.update(shape='none', fontsize='6', fontcolor='#40404070')
+    graph.edge_attr.update(splines=True, fontsize='0', arrowsize=.4)
+    graph.edge_attr.update(decorate=False, group=True, concentrate=True)
+    graph.edge_attr.update(color='#40404030', fontcolor='transparent')
+    graph.layout(prog=layout)
+    graph.draw(os.path.join(bigpicture.OUT_DIR, "netstat.%s.pdf" % layout))
