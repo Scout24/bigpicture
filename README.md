@@ -2,7 +2,7 @@ bigpicture
 ==========
 
 gathers, filters, converts and renders actual network information
-
+(check the [examples](http://arnehilmann.github.com/bigpicture/))
 
 Prerequisits
 ------------
