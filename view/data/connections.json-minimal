@@ -1,0 +1,1 @@
+{"nodes": [{"ip": 1234, "name": "1234"}, {"ip": 4321, "name": "4321"], "edges": [{"source": 0, "target": 1}]}
