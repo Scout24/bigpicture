@@ -12,6 +12,9 @@ logging.basicConfig(level=logging.INFO)
 with open(os.path.join(bigpicture.OUT_DIR, "connections.json"), "w") as json_file:
     json_file.write(bigpicture.dot.dot2json(bigpicture.DOT_FILE))
 
+with open(os.path.join(bigpicture.OUT_DIR, "connections.sparse.json"), "w") as json_file:
+    json_file.write(bigpicture.dot.dot2sparsejson(bigpicture.DOT_FILE))
+
 for layout in ["neato", "twopi"]:    # dot: takes too long for large graphs
     logging.info("rendering graph in %s layout" % layout)
     graph = pygraphviz.AGraph(bigpicture.DOT_FILE)

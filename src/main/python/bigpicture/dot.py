@@ -6,6 +6,23 @@ import pygraphviz
 import bigpicture
 
 
+def dot2sparsejson(filename):
+    g = pygraphviz.AGraph(filename)
+
+    connections = {}
+    for edge in g.edges_iter():
+        source, target = edge
+        protocol = edge.attr['protocol']
+        if source not in connections:
+            connections[source] = {}
+        targets = connections[source]
+        if target not in targets:
+            targets[target] = []
+        protocols = targets[target]
+        protocols.append(protocol)
+    return json.dumps(connections)
+
+
 def dot2json(filename):
     g = pygraphviz.AGraph(filename)
 
