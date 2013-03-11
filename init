@@ -21,6 +21,7 @@ if ! pip install pygraphviz; then
     echo "perhaps you have to install graphviz and libgraphviz-dev."
 fi
 
+pip install docopt
 pip install py2neo
 sudo apt-get install python-pygraphviz
 
