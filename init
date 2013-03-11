@@ -20,3 +20,7 @@ if ! pip install pygraphviz; then
     echo "pygraphviz could not be installed!"
     echo "perhaps you have to install graphviz and libgraphviz-dev."
 fi
+
+pip install py2neo
+sudo apt-get install python-pygraphviz
+
