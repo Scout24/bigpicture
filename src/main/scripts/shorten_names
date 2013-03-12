@@ -6,7 +6,6 @@ import pygraphviz
 import bigpicture
 import bigpicture.dot
 
-
 logging.basicConfig(level=logging.INFO)
 
 graph = pygraphviz.AGraph(bigpicture.DOT_FILE)
@@ -20,8 +19,9 @@ ng = graph.copy()
 ng.clear()
 for edge in graph.edges():
     ng.add_edge(shorten_name(edge[0]), shorten_name(edge[1]), **edge.attr)
-
 graph = ng
+
+graph.write(os.path.join(bigpicture.OUT_DIR, "model.shortened.dot"))
 
 for layout in ["neato", "twopi"]:
     logging.info("rendering graph in %s layout" % layout)
@@ -31,4 +31,4 @@ for layout in ["neato", "twopi"]:
     graph.edge_attr.update(decorate=False, group=True, concentrate=True)
     graph.edge_attr.update(color='#40404030', fontcolor='transparent')
     graph.layout(prog=layout)
-    graph.draw(os.path.join(bigpicture.OUT_DIR, "netstat.shortened.%s.pdf" % layout))
+    graph.draw(os.path.join(bigpicture.OUT_DIR, "model.shortened.%s.pdf" % layout))
