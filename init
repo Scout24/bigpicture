@@ -1,9 +1,11 @@
 #!/bin/bash
 set -u -e -E -C -o pipefail
 
+sudo apt-get install python-virtualenv
+
 virtualenv ve
 set +u
-. ve/bin/activate 
+. ve/bin/activate
 set -u
 
 (
@@ -11,9 +13,12 @@ set -u
     ln -sf ../../../../src/main/python/* .
 )
 (
-    cd ve/bin/ 
+    cd ve/bin/
     ln -sf ../../src/main/scripts/* .
 )
+
+sudo apt-get install graphviz
+sudo apt-get install python-pygraphviz
 
 pip install pybuilder || :
 if ! pip install pygraphviz; then
@@ -23,5 +28,14 @@ fi
 
 pip install docopt
 pip install py2neo
-sudo apt-get install python-pygraphviz
+pip install networkx
+pip install pydotviz
+
+cat <<WELCOME
+
+The virtualenv for the bigpicture project was generated successfully.
+
+Remember to 'source ve/bin/activate' before work.
+
+WELCOME
 
