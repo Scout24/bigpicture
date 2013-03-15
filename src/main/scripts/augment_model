@@ -1,25 +1,38 @@
 #!/usr/bin/env python
-import json
+"""
+Usage:
+    augment_model [DOTFILE] [options]
 
+Options:
+    --ip-mappings=file  maps ips to hostnames [default: data/ip_host.mapping]
+"""
+import json
 import pygraphviz
+from docopt import docopt
 
 import bigpicture
 
 
-with open(bigpicture.MAPPING_FILE) as mapping_file:
+options = docopt(__doc__)
+if not options["DOTFILE"]:
+    options["DOTFILE"] = bigpicture.DOT_FILE
+print options
+
+with open(options["--ip-mappings"]) as mapping_file:
     mapping = json.load(mapping_file)
 
-g = pygraphviz.AGraph(bigpicture.DOT_FILE)
+g = pygraphviz.AGraph(options["DOTFILE"])
 h = g.copy()
 h.clear()
 
 for edge in g.edges_iter():
     def calc_label(s):
         if s in mapping:
-            return "%s %s" % (mapping[s], s)
+            #return "%s %s" % (mapping[s], s)
+            return mapping[s]
         return s
     source = calc_label(edge[0])
     target = calc_label(edge[1])
     h.add_edge(source, target, **edge.attr)
 
-h.write(bigpicture.DOT_FILE)
+h.write(options["DOTFILE"])

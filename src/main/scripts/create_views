@@ -20,7 +20,9 @@ if not options["<dotfile>"]:
 
 logging.basicConfig(level=logging.INFO)
 
-with open(os.path.join(bigpicture.OUT_DIR, "connections.json"), "w") as json_file:
+prefix = os.path.join(bigpicture.OUT_DIR, os.path.basename(options["<dotfile>"]))
+
+with open(prefix + ".json", "w") as json_file:
     json_file.write(bigpicture.dot.dot2json(options["<dotfile>"]))
 
 for layout in ["neato", "twopi"]:    # dot: takes too long for large graphs
@@ -32,4 +34,4 @@ for layout in ["neato", "twopi"]:    # dot: takes too long for large graphs
     graph.edge_attr.update(decorate=False, group=True, concentrate=True)
     graph.edge_attr.update(color='#40404030', fontcolor='transparent')
     graph.layout(prog=layout)
-    graph.draw(os.path.join(bigpicture.OUT_DIR, "netstat.%s.pdf" % layout))
+    graph.draw(prefix + ".%s.pdf" % layout)

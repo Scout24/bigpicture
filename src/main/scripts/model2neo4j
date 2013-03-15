@@ -4,7 +4,7 @@
 model2neo4j
 
 Usage:
-    model2neo4j [<database_url>]
+    model2neo4j DOT_FILE [DATABASE_URL]
 """
 
 from __future__ import print_function
@@ -13,20 +13,22 @@ from py2neo import neo4j
 from docopt import docopt
 
 options = docopt(__doc__)
-if not options["<database_url>"]:
-    options["<database_url>"] = "http://localhost:7474/db/data"
+if not options["DATABASE_URL"]:
+    options["DATABASE_URL"] = "http://localhost:7474/db/data"
 
-graph_db = neo4j.GraphDatabaseService(options["<database_url>"])
+graph_db = neo4j.GraphDatabaseService(options["DATABASE_URL"])
 graph_db.clear()
- 
+
 g = pygraphviz.AGraph()
-g.read("out/netstat.dot")
- 
+g.read(options["DOT_FILE"])
+
 print(graph_db.get_node_count())
 for edge in g.edges_iter():
-    label = (edge[0].split(".be")[0], edge[1].split(".be")[0])
-    print("%s -> %s" % label)
+    label = edge
+    #label = (edge[0].split(".be")[0], edge[1].split(".be")[0])
+    #print("%s -> %s" % label)
     node_a = graph_db.get_or_create_indexed_node("hosts", "name", edge[0], {"label": label[0]})
     node_b = graph_db.get_or_create_indexed_node("hosts", "name", edge[1], {"label": label[1]})
+    # TODO: edge attributes here?
     node_a.create_relationship_to(node_b, edge.attr['label'])
 print(graph_db.get_node_count())
