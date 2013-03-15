@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+"""
+Usage:
+    merge_dot_files [options] DOTFILE ...
+
+Options:
+    -o OUTPUT_FILE
+"""
+
+import sys
+from docopt import docopt
+import pygraphviz
+
+options = docopt(__doc__)
+if not options["-o"]:
+    options["-o"] = sys.stdout
+
+graph = None
+for dotfile in options["DOTFILE"]:
+    g = pygraphviz.AGraph(dotfile)
+    if not graph:
+        graph = g
+        continue
+    graph.add_nodes_from(g.nodes())
+    graph.add_edges_from(g.edges())
+
+graph.write(options["-o"])
+
