@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+"""
+Usage:
+    reduce_model DOT_FILE
+"""
+
+import re
+import networkx as nx
+from docopt import docopt
+
+def get_graph_stats(filename, g):
+    return "%s: %s, %s nodes, %s edges" % (filename, type(g), g.number_of_nodes(), g.size())
+
+options = docopt(__doc__)
+
+dot_file = options["DOT_FILE"]
+new_dot_file = re.sub("\.dot", ".reduced_edges.dot", dot_file)
+
+g = nx.drawing.read_dot(dot_file)
+print get_graph_stats(dot_file, g)
+
+h = nx.DiGraph(g)
+print get_graph_stats(new_dot_file, h)
+
+nx.drawing.write_dot(h, new_dot_file)
