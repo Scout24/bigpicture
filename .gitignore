@@ -3,3 +3,4 @@ ve
 *.pyc
 view/connections.json
 target
+.svn
