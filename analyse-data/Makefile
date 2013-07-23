@@ -2,7 +2,7 @@
 
 DATAS = $(notdir $(wildcard data/*_state))
 TARGETS = $(addprefix out/, $(DATAS:=.reduced_edges.dot.json) $(DATAS:=.reduced_edges.shorter_names.dot.json))
-CLASSPATH = lib/gephi-toolkit.jar:lib/gson-2.2.2.jar:lib/uk-ac-ox-oii-sigmaexporter.jar:out/classes
+CLASSPATH = lib/gephi-toolkit.jar:lib/gson-2.2.2.jar:lib/uk-ac-ox-oii-sigmaexporter.jar:lib/org-gephi-plugins-layout-noverlap.jar:out/classes
 
 all:	$(TARGETS)
 

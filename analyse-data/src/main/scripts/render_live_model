@@ -3,4 +3,4 @@ set -e -E -u -o pipefail -C
 
 CLASSPATH=$(cat out/.classpath)
 
-java -cp $CLASSPATH bigpicture.LiveModelRenderer ../out/model.live.gexf out/model.live.pdf
+java -cp $CLASSPATH bigpicture.LiveModelRenderer ../out/model.live.gexf out/model.live

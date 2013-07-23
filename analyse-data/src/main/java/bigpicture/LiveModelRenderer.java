@@ -3,9 +3,7 @@ package bigpicture;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 
-import org.apache.batik.gvt.text.GVTAttributedCharacterIterator.AttributeFilter;
 import org.gephi.data.attributes.api.AttributeColumn;
 import org.gephi.data.attributes.api.AttributeController;
 import org.gephi.data.attributes.api.AttributeModel;
@@ -14,19 +12,12 @@ import org.gephi.filters.api.Query;
 import org.gephi.filters.api.Range;
 import org.gephi.filters.plugin.attribute.AttributeEqualBuilder;
 import org.gephi.filters.plugin.attribute.AttributeEqualBuilder.EqualStringFilter;
-import org.gephi.filters.plugin.attribute.AttributeRangeBuilder;
-import org.gephi.filters.plugin.attribute.AttributeRangeBuilder.AttributeRangeFilter;
 import org.gephi.filters.plugin.graph.DegreeRangeBuilder.DegreeRangeFilter;
-import org.gephi.filters.plugin.operator.INTERSECTIONBuilder;
-import org.gephi.filters.plugin.operator.INTERSECTIONBuilder.IntersectionOperator;
-import org.gephi.filters.spi.Filter;
-import org.gephi.filters.spi.FilterProperty;
 import org.gephi.graph.api.DirectedGraph;
 import org.gephi.graph.api.Graph;
 import org.gephi.graph.api.GraphController;
 import org.gephi.graph.api.GraphModel;
 import org.gephi.graph.api.GraphView;
-import org.gephi.graph.api.UndirectedGraph;
 import org.gephi.io.exporter.api.ExportController;
 import org.gephi.io.importer.api.Container;
 import org.gephi.io.importer.api.EdgeDefault;
@@ -34,6 +25,8 @@ import org.gephi.io.importer.api.ImportController;
 import org.gephi.io.processor.plugin.DefaultProcessor;
 import org.gephi.layout.plugin.force.StepDisplacement;
 import org.gephi.layout.plugin.force.yifanHu.YifanHuLayout;
+import org.gephi.plugins.layout.noverlap.NoverlapLayout;
+import org.gephi.plugins.layout.noverlap.NoverlapLayoutBuilder;
 import org.gephi.preview.api.PreviewController;
 import org.gephi.preview.api.PreviewModel;
 import org.gephi.preview.api.PreviewProperty;
@@ -57,7 +50,7 @@ public class LiveModelRenderer {
         new LiveModelRenderer().run(args[0], args[1]);
     }
 
-    private void run(final String sourceFile, final String targetFile) {
+    private void run(final String sourceFile, final String targetFilePrefix) {
         //Init a project - and therefore a workspace
         ProjectController pc = Lookup.getDefault().lookup(ProjectController.class);
         pc.newProject();
@@ -119,6 +112,8 @@ public class LiveModelRenderer {
         GraphView view3 = filterController.filter(query2);
         graphModel.setVisibleView(view3);    //Set the filter result as the visible view
         printGraphStats("combined", graphModel);
+        
+        export(targetFilePrefix + ".no-layout.pdf");
 
 
         //Run YifanHuLayout for 100 passes - The layout always takes the current visible view
@@ -132,6 +127,18 @@ public class LiveModelRenderer {
             layout.goAlgo();
         }
         layout.endAlgo();
+        export(targetFilePrefix + ".yifanhu-layout.pdf");
+
+        NoverlapLayoutBuilder nlb = new NoverlapLayoutBuilder();
+        NoverlapLayout noverlapLayout = new NoverlapLayout(nlb);
+        noverlapLayout.setGraphModel(graphModel);
+        noverlapLayout.resetPropertiesValues();
+        noverlapLayout.initAlgo();
+        for (int i = 0; i < 100 && noverlapLayout.canAlgo(); i++){
+        	noverlapLayout.goAlgo();
+        }
+        noverlapLayout.endAlgo();
+        export(targetFilePrefix + ".noverlap-layout.pdf");
 
         //Get Centrality
         GraphDistance distance = new GraphDistance();
@@ -140,28 +147,21 @@ public class LiveModelRenderer {
 
         //Rank color by Degree
         Ranking degreeRanking = rankingController.getModel().getRanking(Ranking.NODE_ELEMENT, Ranking.DEGREE_RANKING);
-        AbstractColorTransformer colorTransformer = (AbstractColorTransformer) rankingController.getModel().getTransformer(Ranking.NODE_ELEMENT, Transformer.RENDERABLE_COLOR);
-        colorTransformer.setColors(new Color[]{new Color(0xFEF0D9), new Color(0xB30000)});
-        //rankingController.transform(degreeRanking,colorTransformer);
-
-        //Rank size by centrality
-        //AttributeColumn centralityColumn = attributeModel.getNodeTable().getColumn(GraphDistance.BETWEENNESS);
-        //Ranking centralityRanking = rankingController.getModel().getRanking(Ranking.NODE_ELEMENT, centralityColumn.getId());
         AbstractSizeTransformer sizeTransformer = (AbstractSizeTransformer) rankingController.getModel().getTransformer(Ranking.NODE_ELEMENT, Transformer.RENDERABLE_SIZE);
         sizeTransformer.setMinSize(3);
         sizeTransformer.setMaxSize(40);
         //rankingController.transform(centralityRanking,sizeTransformer);
         rankingController.transform(degreeRanking,sizeTransformer);
+        export(targetFilePrefix + ".degree-ranked.pdf");
 
-        //Export
-        ExportController ec = Lookup.getDefault().lookup(ExportController.class);
-        try {
-            ec.exportFile(new File(targetFile));
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return;
-        }
-        
+        //Rank size by centrality
+        AttributeColumn centralityColumn = attributeModel.getNodeTable().getColumn(GraphDistance.BETWEENNESS);
+        Ranking centralityRanking = rankingController.getModel().getRanking(Ranking.NODE_ELEMENT, centralityColumn.getId());
+        AbstractColorTransformer colorTransformer = (AbstractColorTransformer) rankingController.getModel().getTransformer(Ranking.NODE_ELEMENT, Transformer.RENDERABLE_COLOR);
+        colorTransformer.setColors(new Color[]{new Color(0xFEF0D9), new Color(0xB30000), Color.blue, Color.green, Color.yellow, Color.orange});
+        rankingController.transform(centralityRanking,colorTransformer);
+
+        export(targetFilePrefix + ".color-partitioned.pdf");
         
         SigmaExporter se = new SigmaExporter();
         se.setWorkspace(graphModel.getWorkspace());
@@ -185,6 +185,16 @@ public class LiveModelRenderer {
         
     }
 
+    private void export(String file) {
+	    ExportController ec = Lookup.getDefault().lookup(ExportController.class);
+	    try {
+	        ec.exportFile(new File(file));
+	    } catch (IOException ex) {
+	        ex.printStackTrace();
+	        return;
+	    }
+    }
+    
     private void printGraphStats(String description, GraphModel graphModel) {
         System.out.println(description);
 

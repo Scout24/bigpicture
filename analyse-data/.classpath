@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry kind="lib" path="lib/gephi-toolkit.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/analyse-data/lib/toolkit-javadoc.zip!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/gson-2.2.2.jar"/>
+	<classpathentry kind="lib" path="lib/uk-ac-ox-oii-sigmaexporter.jar"/>
+	<classpathentry kind="lib" path="lib/org-gephi-plugins-layout-noverlap.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="output" path="out/classes"/>
+</classpath>
