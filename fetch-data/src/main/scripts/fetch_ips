@@ -1,0 +1,103 @@
+#!/usr/bin/env python
+"""
+Usage:
+    fetch_ips [--data-dir=<DATA_DIR>] [--mapping-file=<MAPPING_FILE>]
+
+Options:
+    --data-dir=<DATA_DIR>   where to scan for files
+    --mapping-file=<MAPPING_FILE>   where to put the ip/hostname mapping
+"""
+
+import glob
+import re
+import os
+import socket
+
+from docopt import docopt
+
+from bigpicture import get_config
+
+arguments = docopt(__doc__)
+
+data_dir = arguments.get('--data-dir')
+if not data_dir:
+    data_dir = get_config('live-state', 'data-dir')
+
+mapping_file = arguments.get('--mapping-file')
+if not mapping_file:
+    mapping_file = get_config('global', 'ip-mapping-file')
+
+blacklisted = get_config('global', 'blacklisted-ips').split()
+
+print "fetching ip -> hostname mapping"
+
+print "-- settings"
+print "---- data dir: %s" % data_dir
+print "---- mapping file: %s" % mapping_file
+print "---- blacklisted ips: %s" % ' '.join(blacklisted)
+
+print "-- handling cached mappings"
+mapping = {}
+try:
+    with open(mapping_file) as mf:
+        print "---- reading existing mappings"
+        for line in mf:
+            try:
+                (ip, hostname) = line.split()
+                mapping[ip] = hostname
+            except ValueError:
+                pass
+    print "---- %i mappings found" % len(mapping)
+except Exception, e:
+    print "---- no old mappings found"
+    #print >>sys.stderr, "a problem occured: %s, continuing" % e
+
+print "-- scanning for ips"
+filenames = glob.glob(os.path.join(data_dir, '*', '*', 'netstat'))
+print "---- %i files found for scanning" % len(filenames)
+for filename in filenames:
+    with open(filename) as f:
+        for line in f:
+            (line, subs) = re.subn('^\w+\s+\w+\s+\w+\s+', '', line)
+            if subs == 0:
+                continue
+            (line, subs) = re.subn(':\S+', '', line)
+            if not subs:
+                continue
+            (line, subs) = re.subn('\s+\S+\s+$', '', line)
+            if not subs or not line:
+                continue
+            ips_in_line = line.split()
+            for ip in ips_in_line:
+                if ip in blacklisted:
+                    continue
+                if ip not in mapping:
+                    mapping[ip] = ''
+
+print "-- querying hostnames"
+if hasattr(socket, 'setdefaulttimeout'):
+    print "---- setting timeout for dns queries to 1 second"
+    socket.setdefaulttimeout(1)
+
+cached = fetched = invalid = 0
+for ip in mapping.keys():
+    hostname = mapping[ip]
+    if hostname:
+        cached = cached + 1
+        continue
+    try:
+        answer = socket.gethostbyaddr(ip)
+        mapping[ip] = answer[0]
+        fetched = fetched + 1
+    except Exception, e:
+        #print >>sys.stderr, "%s\t%s" % (ip, str(e))
+        invalid = invalid + 1
+        mapping[ip] = '-'
+
+
+with open(mapping_file, 'w') as mf:
+    for ip, hostname in mapping.iteritems():
+        mf.write("%s\t%s\n" % (ip, hostname))
+
+print "---- mappings: %i total, %i from cache, %i fetched, %i invalid" % (len(mapping), cached, fetched, invalid)
+print "done."

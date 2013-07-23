@@ -1,0 +1,39 @@
+#!/bin/bash
+set -u -e -E -C -o pipefail
+
+sudo apt-get install python-virtualenv
+
+virtualenv ve
+set +u
+. ve/bin/activate
+set -u
+
+BP_TOP_DIR=$(dirname $PWD)
+
+(
+    cd ve/lib/python*/site-packages/
+    rm -rf bigpicture
+    mkdir bigpicture
+    cd bigpicture
+    ln -sf $BP_TOP_DIR/common/src/main/python/bigpicture/* .
+    ln -sf $BP_TOP_DIR/fetch-data/src/main/python/bigpicture/fetchdata .
+)
+(
+    cd ve/bin/
+    ln -sf ../../src/main/scripts/* .
+)
+
+sudo apt-get install pdsh
+
+pip install pybuilder || :
+
+pip install docopt
+
+cat <<WELCOME
+
+The virtualenv for the bigpicture project was generated successfully.
+
+Remember to 'source ve/bin/activate' before work.
+
+WELCOME
+

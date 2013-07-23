@@ -4,3 +4,4 @@ ve
 view/connections.json
 target
 .svn
+.*.swp
