@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+"""
+Usage:
+    build_live_model [--data-dir=<DATA_DIR>] [--model-file=<MODEL_FILE>]
+
+Options:
+    --data-dir=<DATA_DIR>           where to get the live data (should end with "live-data/")
+    --model-file=<MODEL_FILE>       where to store the generated model file
+
+When not given on command line, options are taken from /etc/bigpicture.conf.d/settings.ini
+"""
+
+import glob
+import os
+
+from docopt import docopt
+
+from bigpicture import get_config
+from bigpicture.analysedata import netstats2dot
+
+arguments = docopt(__doc__)
+
+data_dir = arguments.get('--data-dir')
+if not data_dir:
+    data_dir = get_config('live-state', 'data-dir')
+
+model_file = arguments.get('--model-file')
+if not model_file:
+    model_file = get_config('live-state', 'model-file')
+
+print "building model from live data"
+
+print "-- settings"
+print "---- data dir: %s" % data_dir
+print "---- model file: %s" % model_file
+
+input_files = glob.glob(os.path.join(data_dir, "*", "*", "netstat"))
+print "---- %i input files found" % len(input_files)
+
+print "-- creating model"
+with open(model_file, 'w') as mf:
+    mf.write(netstats2dot(input_files))
+
+print "---- %s generated" % model_file
+print "done."

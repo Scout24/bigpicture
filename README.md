@@ -25,10 +25,13 @@ git clone https://github.com/arnehilmann/bigpicture.git
 ```bash
 ./init
 . ve/bin/activate
+
 fetch_data HOST1 [HOST2 [HOST3 [...]]]
-build_model
-lookup_ips
+fetch_ips
+
+build_live_model
 augment_model
+reduce_model
 create_views
 
 google-chrome --allow-file-access-from-files file:///$(pwd)/view/smallhives.html

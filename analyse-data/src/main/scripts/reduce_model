@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+"""
+Usage:
+    reduce_model [--model-file=<MODEL_FILE>] [--model-reduced-dot-file=<REDUCED_DOT_MODEL>] [--model-reduced-gexf-file=<REDUCED_GEXF_MODEL>]
+
+When not given on command line, options are taken from /etc/bigpicture.conf.d/settings.ini
+"""
+
+import networkx as nx
+
+from docopt import docopt
+
+from bigpicture import retrieve_config
+
+
+def get_graph_stats(filename, g):
+    return "%s, %s nodes, %s edges" % (type(g), g.number_of_nodes(), g.size())
+
+arguments = docopt(__doc__)
+
+model_file = retrieve_config('model-file', arguments, 'live-state')
+reduced_dot_file = retrieve_config('model-reduced-dot-file', arguments, 'live-state')
+reduced_gexf_file = retrieve_config('model-reduced-gexf-file', arguments, 'live-state')
+
+print "augmenting/reducing model, generating different formats for post-processing"
+
+print "-- settings"
+print "---- model: %s" % model_file
+print "---- reduced dot model: %s" % reduced_dot_file
+print "---- reduced gexf model: %s" % reduced_gexf_file
+
+print "-- loading model"
+g = nx.drawing.read_dot(model_file)
+print "---- %s" % get_graph_stats(model_file, g)
+
+print "-- creating copy"
+h = nx.DiGraph(g)
+print "---- %s" % get_graph_stats(reduced_dot_file, h)
+
+print "-- removing 'heisenberg' edges"
+to_be_removed = set()
+for u, v, d in h.edges_iter(data=True):
+    if d['protocol'] != 'ssh':
+        continue
+    if u == 'tuvman01':
+        to_be_removed.add((u, v))
+h.remove_edges_from(to_be_removed)
+print "---- %s" % get_graph_stats(reduced_dot_file, h)
+
+print "-- storing new model"
+print "---- writing %s" % reduced_dot_file
+nx.drawing.write_dot(h, reduced_dot_file)
+
+print "---- writing %s" % reduced_gexf_file
+nx.write_gexf(h, reduced_gexf_file)
+
+print "done."

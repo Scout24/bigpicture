@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+
+"""
+Usage:
+    create_views [<dotfile>]
+
+"""
+
+import logging
+import os
+import pygraphviz
+from docopt import docopt
+
+import bigpicture
+import bigpicture.dot
+
+options = docopt(__doc__)
+if not options["<dotfile>"]:
+    options["<dotfile>"] = bigpicture.DOT_FILE
+
+logging.basicConfig(level=logging.INFO)
+
+prefix = os.path.join(bigpicture.OUT_DIR, os.path.basename(options["<dotfile>"]))
+
+with open(prefix + ".json", "w") as json_file:
+    json_file.write(bigpicture.dot.dot2json(options["<dotfile>"]))
+
+for layout in ["neato", "twopi"]:    # dot: takes too long for large graphs
+    logging.info("rendering graph in %s layout" % layout)
+    graph = pygraphviz.AGraph(options["<dotfile>"])
+    graph.graph_attr.update(size='40,30')
+    graph.node_attr.update(shape='none', fontsize='6', fontcolor='#40404070')
+    graph.edge_attr.update(splines=True, fontsize='0', arrowsize=.4)
+    graph.edge_attr.update(decorate=False, group=True, concentrate=True)
+    graph.edge_attr.update(color='#40404030', fontcolor='transparent')
+    graph.layout(prog=layout)
+    graph.draw(prefix + ".%s.pdf" % layout)

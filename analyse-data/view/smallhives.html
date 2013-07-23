@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+  <head>
+    <title>bigpicture | small multiple hives</title>
+    <link rel="stylesheet" type="text/css" href="css/hive.css" />
+  </head>
+  <body>
+    <h1>bigpicture | small multiple hives</h1>
+
+    <table>
+      <tr>
+        <th></th>
+        <th>http</th>
+        <th>ssh</th>
+        <th>nfs</th>
+        <th>ldap</th>
+        <th>mysql</th>
+      </tr>
+      <tr class="graphs">
+        <th id="description0"></th>
+        <td id="graph_0_0"></td>
+        <td id="graph_0_1"></td>
+        <td id="graph_0_2"></td>
+        <td id="graph_0_3"></td>
+        <td id="graph_0_4"></td>
+      </tr>
+      <tr>
+        <th colspan=6" id="infoText">...</th>
+      </tr>
+      <tr class="graphs">
+        <th id="description1"></th>
+        <td id="graph_1_0"></td>
+        <td id="graph_1_1"></td>
+        <td id="graph_1_2"></td>
+        <td id="graph_1_3"></td>
+        <td id="graph_1_4"></td>
+      </tr>
+    </table>
+
+    <a href="index.html">index</a>
+
+    <script src="js/d3.v3.min.js"></script>
+    <script src="js/jquery-1.9.0.min.js"></script>
+    <script src="js/link.js"></script>
+    <script src="js/hive.js"></script>
+    <script>
+      var source = getUrlVar("source");
+      source = (typeof source === "undefined") ? data/connections.json : source;
+      console.log("source: " + source);
+
+      var mapping0 = createGroupFunction(JSON.parse(getUrlVar("mapping0")));
+      var desc0 = mapping0.description;
+      $("#description0").html(desc0[0] + "<br>" + desc0[2] + "&nbsp;" + desc0[1]);
+
+      var mapping1 = createGroupFunction(JSON.parse(getUrlVar("mapping1")));
+      var desc1 = mapping1.description;
+      $("#description1").html(desc1[0] + "<br>" + desc1[2] + "&nbsp;" + desc1[1]);
+
+      addSimpleHive(source, "http", mapping0, "#graph_0_0", "#infoText");
+      addSimpleHive(source, "ssh", mapping0, "#graph_0_1", "#infoText");
+      addSimpleHive(source, "nfs", mapping0, "#graph_0_2", "#infoText");
+      addSimpleHive(source, "ldap", mapping0, "#graph_0_4", "#infoText");
+      addSimpleHive(source, "mysql", mapping0, "#graph_0_3", "#infoText");
+
+      addSimpleHive(source, "http", mapping1, "#graph_1_0", "#infoText");
+      addSimpleHive(source, "ssh", mapping1, "#graph_1_1", "#infoText");
+      addSimpleHive(source, "nfs", mapping1, "#graph_1_2", "#infoText");
+      addSimpleHive(source, "ldap", mapping1, "#graph_1_4", "#infoText");
+      addSimpleHive(source, "mysql", mapping1, "#graph_1_3", "#infoText");
+    </script>
+  </body>
+</html>

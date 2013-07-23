@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+  <head>
+    <title>bigpicture | single hive, http</title>
+    <link rel="stylesheet" type="text/css" href="css/hive.css" />
+  </head>
+  <body>
+    <h1>bigpicture | single hive, http</h1>
+
+    <table>
+      <tr class="graphs">
+        <th id="description0"></th>
+        <td id="graph_0_0"></td>
+        <td id="infoText"></th>
+      </tr>
+    </table>
+
+    <a href="index.html">index</a>
+
+    <script src="js/d3.v3.min.js"></script>
+    <script src="js/jquery-1.9.0.min.js"></script>
+    <script src="js/link.js"></script>
+    <script src="js/hive.js"></script>
+    <script>
+      var source = getUrlVar("source");
+      source = (typeof source === "undefined") ? data/connections.json : source;
+      console.log("source: " + source);
+
+      var mapping0 = createGroupFunction(JSON.parse(getUrlVar("mapping0")));
+      var desc0 = mapping0.description;
+      $("#description0").html(desc0[0] + "<br>" + desc0[2] + "&nbsp;" + desc0[1]);
+
+      addSimpleHive(source, "http", mapping0, "#graph_0_0", "#infoText", 800);
+    </script>
+  </body>
+</html>

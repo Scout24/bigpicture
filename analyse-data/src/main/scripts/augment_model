@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+"""
+Usage:
+    augment_model [--model-file=<MODEL_FILE>] [--mapping-file=<MAPPING_FILE>]
+
+Options:
+    --model-file=<MODEL_FILE>       where to find the model file
+    --mapping-file=<MAPPING_FILE>   where to put the ip/hostname mapping
+"""
+import re
+
+import pygraphviz
+
+from docopt import docopt
+
+from bigpicture import get_config
+
+arguments = docopt(__doc__)
+
+model_file = arguments.get('--model-file')
+if not model_file:
+    model_file = get_config('live-state', 'model-file')
+
+mapping_file = arguments.get('--mapping-file')
+if not mapping_file:
+    mapping_file = get_config('global', 'ip-mapping-file')
+
+print "augmenting a model (replacing plain ips with hostnames)"
+
+print "-- settings"
+print "---- model file: %s" % model_file
+print "---- mapping file: %s" % mapping_file
+
+mapping = {}
+with open(mapping_file) as mf:
+    for line in mf:
+        (ip, hostname) = line.split()
+        if hostname != "-":
+            mapping[ip] = hostname
+
+print "---- %i mappings found" % len(mapping)
+
+print "-- augmenting model"
+g = pygraphviz.AGraph(model_file)
+h = g.copy()
+h.clear()
+
+def map_ip(s):
+    if s in mapping:
+        return "%s" % (mapping[s])
+    return s
+
+def shorten_simple(name):
+    return '%s' % name.split('.', 1)[0]
+
+nodes = {}
+for edge in g.edges_iter():
+    for node in edge:
+        mapped_name = map_ip(node)
+        new_name = shorten_simple(mapped_name)
+        nodes.setdefault(new_name, set()).add(node)
+
+old2new = {}
+for new_name, old_names in nodes.iteritems():
+    if len(old_names) > 1:
+        print "---- problematic shortname: %s" % new_name
+        print "------ corresponding long names: %s" % " ".join(old_names)
+        for old_name in old_names:
+            old2new[old_name] = map_ip(old_name)
+    else:
+        old2new[old_names.pop()] = new_name
+
+def get_new_name(old_name):
+    return old2new.get(old_name, old_name)
+
+for edge in g.edges_iter():
+    h.add_edge(get_new_name(edge[0]), get_new_name(edge[1]), **edge.attr)
+print "---- edges augmented"
+
+for node in h.nodes_iter():
+    if len(node) != 8:
+        continue
+    node.attr['loc'] = node[0:3]
+    node.attr['typ'] = node[3:6]
+    node.attr['loctyp'] = node[0:6]
+print "---- nodes augmented"
+
+print "-- writing back to %s" % model_file
+h.write(model_file)
+print "done."
