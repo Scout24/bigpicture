@@ -2,7 +2,7 @@
 
 DATAS = $(notdir $(wildcard data/*_state))
 TARGETS = $(addprefix out/, $(DATAS:=.reduced_edges.dot.json) $(DATAS:=.reduced_edges.shorter_names.dot.json))
-
+CLASSPATH = lib/gephi-toolkit.jar:lib/gson-2.2.2.jar:lib/uk-ac-ox-oii-sigmaexporter.jar:out/classes
 
 all:	$(TARGETS)
 
@@ -30,3 +30,13 @@ out/actual_state.dot:	src/main/scripts/build_model src/main/scripts/augment_mode
 
 view:	all
 	chromium-browser --allow-file-access-from-files file://$(PWD)/view/index.html
+
+
+
+render:	out/classes/bigpicture/LiveModelRenderer.class
+	src/main/scripts/render_live_model
+
+out/classes/%.class:	src/main/java/%.java
+	mkdir -p out/classes
+	javac -cp $(CLASSPATH):src/main/java -source 1.6 -d out/classes $<
+	echo $(CLASSPATH) > out/.classpath
