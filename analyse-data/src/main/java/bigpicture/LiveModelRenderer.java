@@ -69,8 +69,8 @@ public class LiveModelRenderer {
     }
 
     private void run(final String sourceFile, final String targetFilePrefix) {
-    	renderSubgraph(sourceFile, targetFilePrefix, "nfs");
-    	renderSubgraph(sourceFile, targetFilePrefix, "ssh");
+    	renderSubgraph(sourceFile, targetFilePrefix + ".protocol_nfs", "nfs");
+    	renderSubgraph(sourceFile, targetFilePrefix + ".protocol_ssh", "ssh");
         try {
 			combineExports(targetFilePrefix + ".pdf");
 		} catch (Exception e1) {
@@ -278,6 +278,7 @@ public class LiveModelRenderer {
 				contentStream.close();
 			}
 			doc.save(file);
+			doc.close();
 		} catch(Exception e) {
 			e.printStackTrace();
 			return;

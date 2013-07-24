@@ -30,7 +30,10 @@ def get_config(section, key):
     if not config:
         config = ConfigParser.ConfigParser()
         config.readfp(open(SETTINGS_FILE))
-    return config.get(section, key)
+    try:
+        return config.get(section, key)
+    except ConfigParser.NoOptionError:
+        return None
 
 def retrieve_config(key, arguments, config_section):
     result = arguments.get('--%s' % key)
