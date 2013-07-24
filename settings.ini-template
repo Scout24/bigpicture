@@ -1,0 +1,8 @@
+[DEFAULT]
+top-level-dir=/home/foo/bigpicture
+
+[live-state]
+model-file=%(top-level-dir)s/model.live.dot
+model-reduced-dot-file=%(top-level-dir)s/model.live.reduced.dot
+model-reduced-gexf-file=%(top-level-dir)s/model.live.gexf
+
