@@ -3,6 +3,8 @@ package bigpicture;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -65,13 +67,14 @@ public class LiveModelRenderer {
     }
     
     public static void main(String[] args) {
-        new LiveModelRenderer().run(args[0], args[1]);
+        new LiveModelRenderer().run(args[0], args[1], Arrays.copyOfRange(args, 2, args.length));
     }
 
-    private void run(final String sourceFile, final String targetFilePrefix) {
-    	renderSubgraph(sourceFile, targetFilePrefix + ".protocol_nfs", "nfs");
-    	renderSubgraph(sourceFile, targetFilePrefix + ".protocol_ssh", "ssh");
-        try {
+    private void run(final String sourceFile, final String targetFilePrefix, String[] protocols) {
+    	for (String protocol: protocols) {
+    		renderSubgraph(sourceFile, targetFilePrefix + ".protocol_" + protocol, protocol);
+    	}
+		try {
 			combineExports(targetFilePrefix + ".pdf");
 		} catch (Exception e1) {
 			e1.printStackTrace();
@@ -125,7 +128,7 @@ public class LiveModelRenderer {
         GraphView view = filterController.filter(query);
         graphModel.setVisibleView(view);    //Set the filter result as the visible view
         printGraphStats("protocol=" + protocol, graphModel);
-        export(targetFilePrefix + ".protocol_" + protocol + ".pdf", "edge filter: protocol=" + protocol);
+        export(targetFilePrefix + ".pdf", "edge filter: protocol=" + protocol);
 
         DegreeRangeFilter degreeFilter = new DegreeRangeFilter();
         degreeFilter.init(graphModel.getGraphVisible());
@@ -169,8 +172,8 @@ public class LiveModelRenderer {
         //Rank color by Degree
         Ranking degreeRanking = rankingController.getModel().getRanking(Ranking.NODE_ELEMENT, Ranking.DEGREE_RANKING);
         AbstractSizeTransformer sizeTransformer = (AbstractSizeTransformer) rankingController.getModel().getTransformer(Ranking.NODE_ELEMENT, Transformer.RENDERABLE_SIZE);
-        sizeTransformer.setMinSize(12);
-        sizeTransformer.setMaxSize(80);
+        sizeTransformer.setMinSize(8);
+        sizeTransformer.setMaxSize(20);
         //rankingController.transform(centralityRanking,sizeTransformer);
         rankingController.transform(degreeRanking,sizeTransformer);
         export(targetFilePrefix + ".degree-ranked.pdf", "ranking: degree as node size");
@@ -217,6 +220,12 @@ public class LiveModelRenderer {
     	cf.getFeatures().put("hoverBehavior", "dim");
     	cf.getFeatures().put("groupSelectorAttribute", "date");
     	cf.getSigma().get("drawingProperties").put("defaultEdgeType", "straight");
+    	HashMap<String, Object> graphProperties = cf.getSigma().get("graphProperties");
+    	graphProperties.put("minNodeSize",  "8");
+    	graphProperties.put("maxNodeSize", "20");
+//    	graphProperties.put("minEdgeSize", .2);
+    	cf.getInformationPanel().put("groupByEdgeDirection", Boolean.TRUE);
+    	cf.getText().put("title", "bigpicture | live state - protocol " + protocol);
     	se.setConfigFile(cf, outfile.getAbsolutePath());
         try {
         	se.execute();
