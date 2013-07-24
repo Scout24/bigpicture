@@ -41,6 +41,7 @@ import org.gephi.plugins.layout.noverlap.NoverlapLayout;
 import org.gephi.plugins.layout.noverlap.NoverlapLayoutBuilder;
 import org.gephi.preview.api.PreviewController;
 import org.gephi.preview.api.PreviewModel;
+import org.gephi.preview.api.PreviewProperties;
 import org.gephi.preview.api.PreviewProperty;
 import org.gephi.preview.types.EdgeColor;
 import org.gephi.project.api.ProjectController;
@@ -71,9 +72,11 @@ public class LiveModelRenderer {
     }
 
     private void run(final String sourceFile, final String targetFilePrefix, String[] protocols) {
+    	boolean includeSubsteps = false;
     	for (String protocol: protocols) {
-    		renderSubgraph(sourceFile, targetFilePrefix + ".protocol_" + protocol, protocol);
+    		renderSubgraph(sourceFile, targetFilePrefix + ".protocol_" + protocol, protocol, includeSubsteps);
     	}
+    	renderSubgraph(sourceFile, targetFilePrefix, null, includeSubsteps);
 		try {
 			combineExports(targetFilePrefix + ".pdf");
 		} catch (Exception e1) {
@@ -81,7 +84,7 @@ public class LiveModelRenderer {
 		}
     }
     
-    private void renderSubgraph(final String sourceFile, final String targetFilePrefix, final String protocol) {
+    private void renderSubgraph(final String sourceFile, final String targetFilePrefix, final String protocol, boolean includeSubsteps) {
         ProjectController pc = Lookup.getDefault().lookup(ProjectController.class);
         pc.newProject();
         Workspace workspace = pc.getCurrentWorkspace();
@@ -95,11 +98,14 @@ public class LiveModelRenderer {
         RankingController rankingController = Lookup.getDefault().lookup(RankingController.class);
 
         //Preview
-        model.getProperties().putValue(PreviewProperty.SHOW_NODE_LABELS, Boolean.TRUE);
-        model.getProperties().putValue(PreviewProperty.EDGE_COLOR, new EdgeColor(Color.LIGHT_GRAY));
-        model.getProperties().putValue(PreviewProperty.EDGE_THICKNESS, new Float(0.1f));
-        model.getProperties().putValue(PreviewProperty.NODE_LABEL_FONT, model.getProperties().getFontValue(PreviewProperty.NODE_LABEL_FONT).deriveFont(8));
-        model.getProperties().putValue(PreviewProperty.EDGE_CURVED, Boolean.TRUE);
+        PreviewProperties pps = model.getProperties();
+        pps.putValue(PreviewProperty.NODE_BORDER_WIDTH, 0);
+//        pps.putValue(PreviewProperty.NODE_OPACITY, .9f);
+        pps.putValue(PreviewProperty.SHOW_NODE_LABELS, Boolean.TRUE);
+        pps.putValue(PreviewProperty.EDGE_COLOR, new EdgeColor(Color.LIGHT_GRAY));
+        pps.putValue(PreviewProperty.EDGE_THICKNESS, new Float(0.1f));
+        pps.putValue(PreviewProperty.NODE_LABEL_FONT, model.getProperties().getFontValue(PreviewProperty.NODE_LABEL_FONT).deriveFont(8));
+        pps.putValue(PreviewProperty.EDGE_CURVED, Boolean.TRUE);
 
         //Import file
         Container container;
@@ -117,33 +123,40 @@ public class LiveModelRenderer {
         importController.process(container, new DefaultProcessor(), workspace);
 
         printGraphStats("initial", graphModel);
-        export(targetFilePrefix + ".raw.pdf", "raw data");
+        if (includeSubsteps) {
+        	export(targetFilePrefix + ".raw.pdf", "raw data");
+        }
 
-        //Filter
-        AttributeColumn ac = attributeModel.getEdgeTable().getColumn("protocol");
-        EqualStringFilter arf = new AttributeEqualBuilder.EqualStringFilter(ac);
-        arf.init(graphModel.getGraph());
-        arf.setPattern(protocol);
-        Query query = filterController.createQuery(arf);
-        GraphView view = filterController.filter(query);
-        graphModel.setVisibleView(view);    //Set the filter result as the visible view
-        printGraphStats("protocol=" + protocol, graphModel);
-        export(targetFilePrefix + ".pdf", "edge filter: protocol=" + protocol);
-
-        DegreeRangeFilter degreeFilter = new DegreeRangeFilter();
-        degreeFilter.init(graphModel.getGraphVisible());
-        degreeFilter.setRange(new Range(1, Integer.MAX_VALUE));
-        Query query2 = filterController.createQuery(degreeFilter);
-        GraphView view2 = filterController.filter(query2);
-        graphModel.setVisibleView(view2);
-        printGraphStats("degree > 0", graphModel);
-
-        filterController.setSubQuery(query2, query);
-        GraphView view3 = filterController.filter(query2);
-        graphModel.setVisibleView(view3);    //Set the filter result as the visible view
-        printGraphStats("combined", graphModel);
-        
-        export(targetFilePrefix + ".no-layout.pdf", "node filter: degree > 0");
+        if (protocol != null) {
+	        //Filter
+	        AttributeColumn ac = attributeModel.getEdgeTable().getColumn("protocol");
+	        EqualStringFilter arf = new AttributeEqualBuilder.EqualStringFilter(ac);
+	        arf.init(graphModel.getGraph());
+	        arf.setPattern(protocol);
+	        Query query = filterController.createQuery(arf);
+	        GraphView view = filterController.filter(query);
+	        graphModel.setVisibleView(view);    //Set the filter result as the visible view
+	        printGraphStats("protocol=" + protocol, graphModel);
+	        if (includeSubsteps) {
+	        	export(targetFilePrefix + ".pdf", "edge filter: protocol=" + protocol);
+	        }
+	        DegreeRangeFilter degreeFilter = new DegreeRangeFilter();
+	        degreeFilter.init(graphModel.getGraphVisible());
+	        degreeFilter.setRange(new Range(1, Integer.MAX_VALUE));
+	        Query query2 = filterController.createQuery(degreeFilter);
+	        GraphView view2 = filterController.filter(query2);
+	        graphModel.setVisibleView(view2);
+	        printGraphStats("degree > 0", graphModel);
+	
+	        filterController.setSubQuery(query2, query);
+	        GraphView view3 = filterController.filter(query2);
+	        graphModel.setVisibleView(view3);    //Set the filter result as the visible view
+	        printGraphStats("combined", graphModel);
+	        
+	        if (includeSubsteps) {
+	        	export(targetFilePrefix + ".no-layout.pdf", "node filter: degree > 0");
+	        }
+        }
 
         
         //Run YifanHuLayout for 100 passes - The layout always takes the current visible view
@@ -153,13 +166,16 @@ public class LiveModelRenderer {
         layout.setOptimalDistance(150f);
         layout.setStepRatio(1f);
         layout.setConverged(true);
+        layout.setAdaptiveCooling(true);
         layout.initAlgo();
         for (int i = 0; i < 100 && layout.canAlgo(); i++) {
             layout.goAlgo();
         }
         layout.endAlgo();
-        export(targetFilePrefix + ".yifanhu-layout.pdf", "laout: yifanhu");
-
+        if (includeSubsteps) {
+        	export(targetFilePrefix + ".yifanhu-layout.pdf", "laout: yifanhu");
+        }
+        
         //Get Centrality
         GraphDistance distance = new GraphDistance();
         distance.setDirected(true);
@@ -176,7 +192,9 @@ public class LiveModelRenderer {
         sizeTransformer.setMaxSize(20);
         //rankingController.transform(centralityRanking,sizeTransformer);
         rankingController.transform(degreeRanking,sizeTransformer);
-        export(targetFilePrefix + ".degree-ranked.pdf", "ranking: degree as node size");
+        if (includeSubsteps) {
+        	export(targetFilePrefix + ".degree-ranked.pdf", "ranking: degree as node size");
+        }
 
         //Rank size by centrality
 //        AttributeColumn centralityColumn = attributeModel.getNodeTable().getColumn(GraphDistance.BETWEENNESS);
@@ -191,8 +209,10 @@ public class LiveModelRenderer {
 //        colorTransformer.setColors(new Color[]{Color.red, Color.gray, Color.blue, Color.green, Color.yellow, Color.orange});
         rankingController.transform(centralityRanking,colorTransformer);
 
-        export(targetFilePrefix + ".color-partitioned.pdf", "partition: modularity as color");
-
+        if (includeSubsteps) {
+        	export(targetFilePrefix + ".color-partitioned.pdf", "partition: modularity as color");
+        }
+        
         NoverlapLayoutBuilder nlb = new NoverlapLayoutBuilder();
         NoverlapLayout noverlapLayout = new NoverlapLayout(nlb);
         noverlapLayout.setGraphModel(graphModel);
@@ -202,9 +222,11 @@ public class LiveModelRenderer {
         	noverlapLayout.goAlgo();
         }
         noverlapLayout.endAlgo();
-        export(targetFilePrefix + ".noverlap-layout.pdf", "layout: reduce overlap");
-
-        export(targetFilePrefix + ".final.pdf", "bigpicture | live state", "protocol: " + protocol);
+        if (includeSubsteps) {
+        	export(targetFilePrefix + ".noverlap-layout.pdf", "layout: reduce overlap");
+        }
+        
+        export(targetFilePrefix + ".final.pdf", "bigpicture | live state", (protocol != null) ? "protocol: " + protocol : null);
 
         renderSigmaJs(protocol, graphModel);
         
@@ -218,11 +240,11 @@ public class LiveModelRenderer {
     	ConfigFile cf = new ConfigFile();
     	cf.setDefaults();
     	cf.getFeatures().put("hoverBehavior", "dim");
-    	cf.getFeatures().put("groupSelectorAttribute", "date");
+    	cf.getFeatures().put("groupSelectorAttribute", "protocol");
     	cf.getSigma().get("drawingProperties").put("defaultEdgeType", "straight");
     	HashMap<String, Object> graphProperties = cf.getSigma().get("graphProperties");
     	graphProperties.put("minNodeSize",  "8");
-    	graphProperties.put("maxNodeSize", "20");
+    	graphProperties.put("maxNodeSize", "10");
 //    	graphProperties.put("minEdgeSize", .2);
     	cf.getInformationPanel().put("groupByEdgeDirection", Boolean.TRUE);
     	cf.getText().put("title", "bigpicture | live state - protocol " + protocol);
