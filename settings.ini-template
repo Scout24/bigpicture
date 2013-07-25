@@ -1,8 +1,13 @@
 [DEFAULT]
-top-level-dir=/home/foo/bigpicture
+raw-data-dir=/tmp/bigpicture/out
+
+[global]
+ip-mapping-file=%(raw-data-dir)s/ip.mappings
+blacklisted-ips=0.0.0.0 127.0.0.1
 
 [live-state]
-model-file=%(top-level-dir)s/model.live.dot
-model-reduced-dot-file=%(top-level-dir)s/model.live.reduced.dot
-model-reduced-gexf-file=%(top-level-dir)s/model.live.gexf
-
+data-dir=%(raw-data-dir)s/live-state
+model-file=%(raw-data-dir)s/model.live.dot
+abc-file=%(raw-data-dir)s/model.live.abc
+model-reduced-dot-file=%(raw-data-dir)s/model.live.reduced.dot
+model-reduced-gexf-file=%(raw-data-dir)s/model.live.gexf
