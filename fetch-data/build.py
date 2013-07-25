@@ -16,7 +16,7 @@ name = 'bigpicture-fetchdata'
 summary = 'Creates bigpicture dot files: the fetch-data part '
 description = 'Create a BigPicture of your server landscape - the fetch-data part'
 license = 'proprietary'
-version = '0.1'
+version = '0.2'
 
 default_task = ['verify', 'publish']
 
