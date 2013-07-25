@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 """
 Usage:
-    fetch_live_data [--data-dir=<DATA_DIR>] [--parallel=<PARALLEL>] [<host>...]
+    fetch_live_data [--data-dir=<DATA_DIR>] [--parallel=<PARALLEL>] [--now=<NOW>] [<host>...]
 
 Options:
     -h --help               Show this help.
     --data-dir=<DATA_DIR>   where should the data be stored
     --parallel=<PARALLEL>   start PARALLEL threads for querying [default: 2]
+    --now=<NOW>             uses <NOW> as timestamp
 
 When not given on command line, options are taken from /etc/bigpicture.conf.d/settings.ini
 """
@@ -15,27 +16,25 @@ import sys
 
 from docopt import docopt
 
-from bigpicture import get_config
+from bigpicture import retrieve_config
 from bigpicture.fetchdata import fetch_live_data
 
 arguments = docopt(__doc__)
 
-data_dir = arguments.get('--data-dir')
-if not data_dir:
-    data_dir = get_config('live-state', 'data-dir')
+data_dir = retrieve_config('data-dir', arguments, 'live-state')
 
 hosts = arguments['<host>']
 if not hosts:
     hosts = sys.stdin.readlines()
 hosts = [h for line in hosts for h in line.rstrip().split()]
 
-print "fetching live data (currently via netstat)"
+print "fetching live data (netstat and mount, via pdsh)"
 
 print "-- settings"
 print "---- data dir: %s" % data_dir
 print "---- nr hosts: %i" % len(hosts)
 print "---- parallel: %s" % arguments['--parallel']
 print "-- fetching live data"
-fetch_live_data(hosts, data_dir, arguments['--parallel'])
+fetch_live_data(hosts, data_dir, arguments['--parallel'], arguments['--now'])
 
 print "done."

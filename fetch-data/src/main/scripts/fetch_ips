@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """
 Usage:
-    fetch_ips [--data-dir=<DATA_DIR>] [--mapping-file=<MAPPING_FILE>]
+    fetch_ips [--data-dir=<DATA_DIR>] [--ip-mapping-file=<MAPPING_FILE>]
 
 Options:
     --data-dir=<DATA_DIR>   where to scan for files
-    --mapping-file=<MAPPING_FILE>   where to put the ip/hostname mapping
+    --ip-mapping-file=<MAPPING_FILE>   where to put the ip/hostname mapping
 """
 
 import glob
@@ -15,19 +15,13 @@ import socket
 
 from docopt import docopt
 
-from bigpicture import get_config
+from bigpicture import retrieve_config
 
 arguments = docopt(__doc__)
 
-data_dir = arguments.get('--data-dir')
-if not data_dir:
-    data_dir = get_config('live-state', 'data-dir')
-
-mapping_file = arguments.get('--mapping-file')
-if not mapping_file:
-    mapping_file = get_config('global', 'ip-mapping-file')
-
-blacklisted = get_config('global', 'blacklisted-ips').split()
+data_dir = retrieve_config('data-dir', arguments, 'live-state')
+mapping_file = retrieve_config('ip-mapping-file', arguments, 'global')
+blacklisted = retrieve_config('blacklisted-ips', {}, 'global').split()
 
 print "fetching ip -> hostname mapping"
 
@@ -53,11 +47,14 @@ except Exception, e:
     #print >>sys.stderr, "a problem occured: %s, continuing" % e
 
 print "-- scanning for ips"
-filenames = glob.glob(os.path.join(data_dir, '*', '*', 'netstat'))
+filenames = glob.glob(os.path.join(data_dir, '*', '*'))
 print "---- %i files found for scanning" % len(filenames)
 for filename in filenames:
     with open(filename) as f:
         for line in f:
+            (cmd, line) = line.split(": ")
+            if cmd != 'netstat':
+                continue
             (line, subs) = re.subn('^\w+\s+\w+\s+\w+\s+', '', line)
             if subs == 0:
                 continue

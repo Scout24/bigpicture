@@ -4,12 +4,16 @@ import os
 import subprocess
 
 
-def fetch_live_data(hosts, out_dir, parallel):
-    now = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-    cmd = "netstat"
+def fetch_live_data(hosts, out_dir, parallel, now=None):
+    if not now:
+        now = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
     cmds = ["/usr/bin/pdsh", "-w", "-", "-R", "ssh", "-f", str(parallel),
-        "netstat -a -t --numeric-hosts"]
+            "; ".join([
+                "netstat -a -t --numeric-hosts | sed 's/^/netstat: /'",
+                "mount | grep 'type nfs' | sed 's/^/mount: /'"
+            ])
+    ]
 
     process = subprocess.Popen(cmds,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -23,10 +27,10 @@ def fetch_live_data(hosts, out_dir, parallel):
             print "---- %s: %s" % (str(e), line)
             continue
         if host not in out_files:
-            host_out_dir = os.path.join(out_dir, host, now)
+            host_out_dir = os.path.join(out_dir, host)
+            out_filename = os.path.join(host_out_dir, now)
             if not os.path.exists(host_out_dir):
                 os.makedirs(host_out_dir)
-            out_filename = os.path.join(host_out_dir, cmd)
             out_files[host] = open(out_filename, "w")
         out_files[host].write(data + "\n")
     for out_file in out_files.values():
