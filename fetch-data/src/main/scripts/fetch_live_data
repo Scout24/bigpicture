@@ -6,7 +6,7 @@ Usage:
 Options:
     -h --help               Show this help.
     --data-dir=<DATA_DIR>   where should the data be stored
-    --parallel=<PARALLEL>   start PARALLEL threads for querying [default: 2]
+    --parallel=<PARALLEL>   start PARALLEL threads for querying [default: 10]
     --now=<NOW>             uses <NOW> as timestamp
 
 When not given on command line, options are taken from /etc/bigpicture.conf.d/settings.ini
