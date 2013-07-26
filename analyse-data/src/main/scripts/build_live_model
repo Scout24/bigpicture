@@ -34,7 +34,7 @@ print "-- settings"
 print "---- data dir: %s" % data_dir
 print "---- model file: %s" % model_file
 
-input_files = glob.glob(os.path.join(data_dir, "*", "*", "netstat"))
+input_files = glob.glob(os.path.join(data_dir, "*", "*"))
 print "---- %i input files found" % len(input_files)
 
 print "-- creating model"

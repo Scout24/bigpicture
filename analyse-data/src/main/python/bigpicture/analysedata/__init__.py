@@ -45,10 +45,13 @@ def netstats2dot(files):
 
 def netstat2dot(file):
     listenports = set()
-    timestamp = os.path.basename(os.path.dirname(file))
-    date = timestamp.split('--', 1)[0]
+    timestamp = os.path.basename(file)
+    (date, time) = timestamp.split('T')
     with open(file) as listen_file:
         for line in listen_file.readlines():
+            if not re.match('netstat: ', line):
+                continue
+            line = line.replace('netstat: ', '')
             if re.search("LISTEN", line):
                 try:
                     proto, recv, send, local, remote, state = line.split()
@@ -59,6 +62,9 @@ def netstat2dot(file):
 
     with open(file) as established_file:
         for line in established_file.readlines()[2:]:
+            if not re.match('netstat: ', line):
+                continue
+            line = line.replace('netstat: ', '')
             if re.search("LISTEN", line):
                 continue
             line = line.rstrip()
