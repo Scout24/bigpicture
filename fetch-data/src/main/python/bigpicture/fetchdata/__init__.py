@@ -15,8 +15,11 @@ def fetch_live_data(hosts, out_dir, parallel, now=None):
             ])
     ]
 
+    pdsh_env = os.environ.update({
+        'PDSH_SSH_ARGS_APPEND': '-o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q'
+    })
     process = subprocess.Popen(cmds,
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, env=pdsh_env)
     (stdout, stderr) = process.communicate(input="\n".join(hosts))
 
     out_files = {}
