@@ -1,0 +1,4 @@
+#!/bin/bash
+
+PATH=/usr/bin:/bin
+env -i PWD=$PWD SHELL=/bin/sh USER=$USER PATH=$PATH PWD=$PWD HOME=$HOME LOGNAME=$LOGNAME SHLVL=1 $*
