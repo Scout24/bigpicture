@@ -22,8 +22,19 @@ def fetch_live_data(hosts, out_dir, parallel, now=None):
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, env=pdsh_env)
     (stdout, stderr) = process.communicate(input="\n".join(hosts))
 
+    parse_live_data(stdout, out_dir, now)
+    returncode = process.wait()
+
+    print "---- return code %i" % returncode
+    return returncode
+
+
+def parse_live_data(stream, out_dir, now=None):
+    if not now:
+        now = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+
     out_files = {}
-    for line in stdout.splitlines():
+    for line in stream.splitlines():
         try:
             host, data = line.split(": ", 1)
         except ValueError, e:
@@ -38,8 +49,4 @@ def fetch_live_data(hosts, out_dir, parallel, now=None):
         out_files[host].write(data + "\n")
     for out_file in out_files.values():
         out_file.close()
-    returncode = process.wait()
-
     print "---- %i files created" % len(out_files)
-    print "---- return code %i" % returncode
-    return returncode

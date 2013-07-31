@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+"""
+Usage:
+    fetch-live-data [--data-dir=<DATA_DIR>] [--now=<NOW>] [--pdsh-args=<STRING>]
+
+Options:
+    -h --help               Show this help.
+    --data-dir=<DATA_DIR>   where should the data be stored
+    --now=<NOW>             uses <NOW> as timestamp
+    --pdsh-args=<STRING>    passed thru to pdsh command
+
+When not given on command line, options are taken from /etc/bigpicture.conf.d/settings.ini
+"""
+
+from datetime import datetime
+import os
+import subprocess
+import shlex
+
+from docopt import docopt
+
+from bigpicture import retrieve_config
+from bigpicture.fetchdata import parse_live_data
+
+arguments = docopt(__doc__)
+
+data_dir = retrieve_config('data-dir', arguments, 'live-state')
+pdsh_default_args = shlex.split(retrieve_config('pdsh-defaults', {}, 'live-state'))
+pdsh_args = shlex.split(arguments['--pdsh-args'])
+if not pdsh_args:
+    pdsh_args = ''
+now = arguments['--now']
+if not now:
+    now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+print "fetching live data (netstat and mount, via pdsh)"
+
+print "-- settings"
+print "---- data dir: %s" % data_dir
+print "---- pdsh defaults: %s" % pdsh_default_args
+print "---- pdsh args: %s" % pdsh_args
+print "---- now: %s" % now
+print "-- fetching live data"
+
+cmds = ["/usr/bin/pdsh"] + pdsh_default_args + pdsh_args + [
+            "; ".join([
+                "netstat -a -t --numeric-hosts | sed 's/^/netstat: /'",
+                "mount | grep 'type nfs' | sed 's/^/mount: /'"
+            ])
+        ]
+
+pdsh_env = os.environ.update({
+    'PDSH_SSH_ARGS_APPEND': '-o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q'
+})
+
+process = subprocess.Popen(cmds, stdout=subprocess.PIPE, env=pdsh_env)
+(stdout, stderr) = process.communicate()
+
+parse_live_data(stdout, data_dir, now)
+
+print "done."
