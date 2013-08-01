@@ -3,8 +3,6 @@ import re
 import json
 import pygraphviz
 
-import bigpicture
-
 
 def dot2sparsejson(filename):
     g = pygraphviz.AGraph(filename)
@@ -23,9 +21,7 @@ def dot2sparsejson(filename):
     return json.dumps(connections)
 
 
-def dot2json(filename):
-    g = pygraphviz.AGraph(filename)
-
+def model2json(model, filename):
     nodes = []
     node_map = {}
 
@@ -50,22 +46,12 @@ def dot2json(filename):
         return (calc_shortname(edge[0]), calc_shortname(edge[1]))
 
     links = []
-    for edge in g.edges_iter():
-        #labels = calc_labels(edge)
-        labels = edge
-        index_1 = get_or_add_node_index(labels[0])
-        index_2 = get_or_add_node_index(labels[1])
+    for u, v, d in model.edges_iter(data=True):
+        index_1 = get_or_add_node_index(u)
+        index_2 = get_or_add_node_index(v)
 
-        protocol = edge.attr['protocol']
+        protocol = d.get('protocol', '__unknown__')
         links.append({"source": index_1, "target": index_2, "protocol": protocol})
 
-    return json.dumps({"nodes": nodes, "links": links})
-
-
-def extract_ips_from_dot_file(file):
-    ips = set()
-    g = pygraphviz.AGraph(file)
-    for edge in g.edges_iter():
-        ips.add(edge[0])
-        ips.add(edge[1])
-    return ips
+    with open(filename, 'w') as json_file:
+        json.dump({"nodes": nodes, "links": links}, json_file)

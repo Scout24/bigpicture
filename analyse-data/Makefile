@@ -4,7 +4,7 @@ DATAS = $(notdir $(wildcard data/*_state))
 TARGETS = $(addprefix out/, $(DATAS:=.reduced_edges.dot.json) $(DATAS:=.reduced_edges.shorter_names.dot.json))
 CLASSPATH = lib/gephi-toolkit.jar:lib/gson-2.2.2.jar:lib/uk-ac-ox-oii-sigmaexporter.jar:lib/org-gephi-plugins-layout-noverlap.jar:lib/pdfbox-app-1.8.2.jar:out/classes
 
-all:	$(TARGETS)
+all:	$(TARGETS) render
 
 clean:
 	rm -rf out
