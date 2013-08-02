@@ -64,26 +64,26 @@ public class LiveModelRenderer {
     private final List<File> toCombine;
 
     public LiveModelRenderer() {
-    	this.toCombine = new LinkedList<File>();
+        this.toCombine = new LinkedList<File>();
     }
-    
+
     public static void main(String[] args) {
         new LiveModelRenderer().run(args[0], args[1], Arrays.copyOfRange(args, 2, args.length));
     }
 
     private void run(final String sourceFile, final String targetFilePrefix, String[] protocols) {
-    	boolean includeSubsteps = false;
-    	for (String protocol: protocols) {
-    		renderSubgraph(sourceFile, targetFilePrefix + ".protocol_" + protocol, protocol, includeSubsteps);
-    	}
-    	renderSubgraph(sourceFile, targetFilePrefix, null, includeSubsteps);
-		try {
-			combineExports(targetFilePrefix + ".pdf");
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		}
+        boolean includeSubsteps = false;
+        for (String protocol: protocols) {
+            renderSubgraph(sourceFile, targetFilePrefix + ".protocol_" + protocol, protocol, includeSubsteps);
+        }
+        renderSubgraph(sourceFile, targetFilePrefix, null, includeSubsteps);
+        try {
+            combineExports(targetFilePrefix + ".pdf");
+        } catch (Exception e1) {
+            e1.printStackTrace();
+        }
     }
-    
+
     private void renderSubgraph(final String sourceFile, final String targetFilePrefix, final String protocol, boolean includeSubsteps) {
         ProjectController pc = Lookup.getDefault().lookup(ProjectController.class);
         pc.newProject();
@@ -100,7 +100,7 @@ public class LiveModelRenderer {
         //Preview
         PreviewProperties pps = model.getProperties();
         pps.putValue(PreviewProperty.NODE_BORDER_WIDTH, 0);
-//        pps.putValue(PreviewProperty.NODE_OPACITY, .9f);
+        //        pps.putValue(PreviewProperty.NODE_OPACITY, .9f);
         pps.putValue(PreviewProperty.SHOW_NODE_LABELS, Boolean.TRUE);
         pps.putValue(PreviewProperty.EDGE_COLOR, new EdgeColor(Color.LIGHT_GRAY));
         pps.putValue(PreviewProperty.EDGE_THICKNESS, new Float(0.1f));
@@ -110,8 +110,8 @@ public class LiveModelRenderer {
         //Import file
         Container container;
         try {
-        	File file = new File(System.getProperty("user.dir"), sourceFile);
-        	System.out.println("source: " + file);
+            File file = new File(sourceFile);
+            System.out.println("source: " + file);
             container = importController.importFile(file);
             container.getLoader().setEdgeDefault(EdgeDefault.DIRECTED);   //Force DIRECTED
         } catch (Exception ex) {
@@ -124,41 +124,41 @@ public class LiveModelRenderer {
 
         printGraphStats("initial", graphModel);
         if (includeSubsteps) {
-        	export(targetFilePrefix + ".raw.pdf", "raw data");
+            export(targetFilePrefix + ".raw.pdf", "raw data");
         }
 
         if (protocol != null) {
-	        //Filter
-	        AttributeColumn ac = attributeModel.getEdgeTable().getColumn("protocol");
-	        EqualStringFilter arf = new AttributeEqualBuilder.EqualStringFilter(ac);
-	        arf.init(graphModel.getGraph());
-	        arf.setPattern(protocol);
-	        Query query = filterController.createQuery(arf);
-	        GraphView view = filterController.filter(query);
-	        graphModel.setVisibleView(view);    //Set the filter result as the visible view
-	        printGraphStats("protocol=" + protocol, graphModel);
-	        if (includeSubsteps) {
-	        	export(targetFilePrefix + ".pdf", "edge filter: protocol=" + protocol);
-	        }
-	        DegreeRangeFilter degreeFilter = new DegreeRangeFilter();
-	        degreeFilter.init(graphModel.getGraphVisible());
-	        degreeFilter.setRange(new Range(1, Integer.MAX_VALUE));
-	        Query query2 = filterController.createQuery(degreeFilter);
-	        GraphView view2 = filterController.filter(query2);
-	        graphModel.setVisibleView(view2);
-	        printGraphStats("degree > 0", graphModel);
-	
-	        filterController.setSubQuery(query2, query);
-	        GraphView view3 = filterController.filter(query2);
-	        graphModel.setVisibleView(view3);    //Set the filter result as the visible view
-	        printGraphStats("combined", graphModel);
-	        
-	        if (includeSubsteps) {
-	        	export(targetFilePrefix + ".no-layout.pdf", "node filter: degree > 0");
-	        }
+            //Filter
+            AttributeColumn ac = attributeModel.getEdgeTable().getColumn("protocol");
+            EqualStringFilter arf = new AttributeEqualBuilder.EqualStringFilter(ac);
+            arf.init(graphModel.getGraph());
+            arf.setPattern(protocol);
+            Query query = filterController.createQuery(arf);
+            GraphView view = filterController.filter(query);
+            graphModel.setVisibleView(view);    //Set the filter result as the visible view
+            printGraphStats("protocol=" + protocol, graphModel);
+            if (includeSubsteps) {
+                export(targetFilePrefix + ".pdf", "edge filter: protocol=" + protocol);
+            }
+            DegreeRangeFilter degreeFilter = new DegreeRangeFilter();
+            degreeFilter.init(graphModel.getGraphVisible());
+            degreeFilter.setRange(new Range(1, Integer.MAX_VALUE));
+            Query query2 = filterController.createQuery(degreeFilter);
+            GraphView view2 = filterController.filter(query2);
+            graphModel.setVisibleView(view2);
+            printGraphStats("degree > 0", graphModel);
+
+            filterController.setSubQuery(query2, query);
+            GraphView view3 = filterController.filter(query2);
+            graphModel.setVisibleView(view3);    //Set the filter result as the visible view
+            printGraphStats("combined", graphModel);
+
+            if (includeSubsteps) {
+                export(targetFilePrefix + ".no-layout.pdf", "node filter: degree > 0");
+            }
         }
 
-        
+
         //Run YifanHuLayout for 100 passes - The layout always takes the current visible view
         YifanHuLayout layout = new YifanHuLayout(null, new StepDisplacement(1f));
         layout.setGraphModel(graphModel);
@@ -173,9 +173,9 @@ public class LiveModelRenderer {
         }
         layout.endAlgo();
         if (includeSubsteps) {
-        	export(targetFilePrefix + ".yifanhu-layout.pdf", "laout: yifanhu");
+            export(targetFilePrefix + ".yifanhu-layout.pdf", "laout: yifanhu");
         }
-        
+
         //Get Centrality
         GraphDistance distance = new GraphDistance();
         distance.setDirected(true);
@@ -184,7 +184,7 @@ public class LiveModelRenderer {
         Modularity m = new Modularity();
         m.setUseWeight(false);
         m.execute(graphModel, attributeModel);
-        
+
         //Rank color by Degree
         Ranking degreeRanking = rankingController.getModel().getRanking(Ranking.NODE_ELEMENT, Ranking.DEGREE_RANKING);
         AbstractSizeTransformer sizeTransformer = (AbstractSizeTransformer) rankingController.getModel().getTransformer(Ranking.NODE_ELEMENT, Transformer.RENDERABLE_SIZE);
@@ -193,139 +193,139 @@ public class LiveModelRenderer {
         //rankingController.transform(centralityRanking,sizeTransformer);
         rankingController.transform(degreeRanking,sizeTransformer);
         if (includeSubsteps) {
-        	export(targetFilePrefix + ".degree-ranked.pdf", "ranking: degree as node size");
+            export(targetFilePrefix + ".degree-ranked.pdf", "ranking: degree as node size");
         }
 
         //Rank size by centrality
-//        AttributeColumn centralityColumn = attributeModel.getNodeTable().getColumn(GraphDistance.BETWEENNESS);
+        //        AttributeColumn centralityColumn = attributeModel.getNodeTable().getColumn(GraphDistance.BETWEENNESS);
         AttributeColumn centralityColumn = attributeModel.getNodeTable().getColumn(Modularity.MODULARITY_CLASS);
         Ranking centralityRanking = rankingController.getModel().getRanking(Ranking.NODE_ELEMENT, centralityColumn.getId());
         AbstractColorTransformer colorTransformer = (AbstractColorTransformer) rankingController.getModel().getTransformer(Ranking.NODE_ELEMENT, Transformer.RENDERABLE_COLOR);
-        
+
         float[] positions = {0f,0.5f,1f};
         colorTransformer.setColorPositions(positions);
         Color[] colors = new Color[]{new Color(0x0000FF), new Color(0x00FF00),new Color(0xFF0000)};
         colorTransformer.setColors(colors);
-//        colorTransformer.setColors(new Color[]{Color.red, Color.gray, Color.blue, Color.green, Color.yellow, Color.orange});
+        //        colorTransformer.setColors(new Color[]{Color.red, Color.gray, Color.blue, Color.green, Color.yellow, Color.orange});
         rankingController.transform(centralityRanking,colorTransformer);
 
         if (includeSubsteps) {
-        	export(targetFilePrefix + ".color-partitioned.pdf", "partition: modularity as color");
+            export(targetFilePrefix + ".color-partitioned.pdf", "partition: modularity as color");
         }
-        
+
         NoverlapLayoutBuilder nlb = new NoverlapLayoutBuilder();
         NoverlapLayout noverlapLayout = new NoverlapLayout(nlb);
         noverlapLayout.setGraphModel(graphModel);
         noverlapLayout.resetPropertiesValues();
         noverlapLayout.initAlgo();
         for (int i = 0; i < 100 && noverlapLayout.canAlgo(); i++){
-        	noverlapLayout.goAlgo();
+            noverlapLayout.goAlgo();
         }
         noverlapLayout.endAlgo();
         if (includeSubsteps) {
-        	export(targetFilePrefix + ".noverlap-layout.pdf", "layout: reduce overlap");
+            export(targetFilePrefix + ".noverlap-layout.pdf", "layout: reduce overlap");
         }
-        
+
         export(targetFilePrefix + ".final.pdf", "bigpicture | live state", (protocol != null) ? "protocol: " + protocol : null);
 
         renderSigmaJs(protocol, graphModel);
-        
+
     }
 
-	private void renderSigmaJs(final String protocol, GraphModel graphModel) {
-		SigmaExporter se = new SigmaExporter();
+    private void renderSigmaJs(final String protocol, GraphModel graphModel) {
+        SigmaExporter se = new SigmaExporter();
         se.setWorkspace(graphModel.getWorkspace());
-    	File outfile = new File(System.getProperty("user.dir"), "out/sigmajs/" + protocol);
-    	
-    	ConfigFile cf = new ConfigFile();
-    	cf.setDefaults();
-    	cf.getFeatures().put("hoverBehavior", "dim");
-    	cf.getFeatures().put("groupSelectorAttribute", "protocol");
-    	cf.getSigma().get("drawingProperties").put("defaultEdgeType", "straight");
-    	HashMap<String, Object> graphProperties = cf.getSigma().get("graphProperties");
-    	graphProperties.put("minNodeSize",  "8");
-    	graphProperties.put("maxNodeSize", "10");
-//    	graphProperties.put("minEdgeSize", .2);
-    	cf.getInformationPanel().put("groupByEdgeDirection", Boolean.TRUE);
-    	cf.getText().put("title", "bigpicture | live state - protocol " + protocol);
-    	se.setConfigFile(cf, outfile.getAbsolutePath());
+        File outfile = new File(System.getProperty("user.dir"), "out/sigmajs/" + protocol);
+
+        ConfigFile cf = new ConfigFile();
+        cf.setDefaults();
+        cf.getFeatures().put("hoverBehavior", "dim");
+        cf.getFeatures().put("groupSelectorAttribute", "protocol");
+        cf.getSigma().get("drawingProperties").put("defaultEdgeType", "straight");
+        HashMap<String, Object> graphProperties = cf.getSigma().get("graphProperties");
+        graphProperties.put("minNodeSize",  "8");
+        graphProperties.put("maxNodeSize", "10");
+        //    	graphProperties.put("minEdgeSize", .2);
+        cf.getInformationPanel().put("groupByEdgeDirection", Boolean.TRUE);
+        cf.getText().put("title", "bigpicture | live state - protocol " + protocol);
+        se.setConfigFile(cf, outfile.getAbsolutePath());
         try {
-        	se.execute();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return;
-		}
-	}
+            se.execute();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+    }
 
     private void export(String filename, String title) {
-    	export(filename, title, null);
+        export(filename, title, null);
     }
-    
+
     private void export(String filename, String title, String subtitle) {
-    	File file = new File(filename);
-    	toCombine.add(file);
-    	export2File(file);
-    	addTitle(file, title, subtitle);
+        File file = new File(filename);
+        toCombine.add(file);
+        export2File(file);
+        addTitle(file, title, subtitle);
     }
-    
+
     private void export2File(File file) {
-    	ExportController ec = Lookup.getDefault().lookup(ExportController.class);
-    	PDFExporter pdfExporter = (PDFExporter) ec.getExporter("pdf");
-    	pdfExporter.setLandscape(false);
-    	pdfExporter.setPageSize(PageSize.A4);
-    	
-    	try {
-	        ec.exportFile(file, pdfExporter);
-	    } catch (IOException ex) {
-	        ex.printStackTrace();
-	        return;
-	    }
+        ExportController ec = Lookup.getDefault().lookup(ExportController.class);
+        PDFExporter pdfExporter = (PDFExporter) ec.getExporter("pdf");
+        pdfExporter.setLandscape(false);
+        pdfExporter.setPageSize(PageSize.A4);
+
+        try {
+            ec.exportFile(file, pdfExporter);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return;
+        }
     }
-    
+
     private void addTitle(File file, String title, String subtitle) {
-		try {
-	    	PDDocument doc = PDDocument.load(file);
-	
-			float fontSize = 24.0f;
-			float subtitleFontSize = 16f;
-			int offset = 30;
-			
-			for (Object o: doc.getDocumentCatalog().getAllPages()) {
-				PDPage page = (PDPage) o;
-				PDRectangle pageSize = page.findMediaBox();
-				float topPosition = pageSize.getHeight();
-	
-				PDPageContentStream contentStream = new PDPageContentStream(doc, page, true, true);
-				contentStream.beginText();
-				contentStream.setFont(PDType1Font.HELVETICA_BOLD, fontSize);
-				contentStream.moveTextPositionByAmount(offset, topPosition - offset - fontSize);
-				contentStream.drawString(title);
-				if (subtitle != null) {
-					contentStream.setFont(PDType1Font.HELVETICA, subtitleFontSize);
-					contentStream.moveTextPositionByAmount(0,  -1.5f * subtitleFontSize);
-					contentStream.drawString(subtitle);
-				}
-				contentStream.endText();
-				contentStream.close();
-			}
-			doc.save(file);
-			doc.close();
-		} catch(Exception e) {
-			e.printStackTrace();
-			return;
-		}
+        try {
+            PDDocument doc = PDDocument.load(file);
+
+            float fontSize = 24.0f;
+            float subtitleFontSize = 16f;
+            int offset = 30;
+
+            for (Object o: doc.getDocumentCatalog().getAllPages()) {
+                PDPage page = (PDPage) o;
+                PDRectangle pageSize = page.findMediaBox();
+                float topPosition = pageSize.getHeight();
+
+                PDPageContentStream contentStream = new PDPageContentStream(doc, page, true, true);
+                contentStream.beginText();
+                contentStream.setFont(PDType1Font.HELVETICA_BOLD, fontSize);
+                contentStream.moveTextPositionByAmount(offset, topPosition - offset - fontSize);
+                contentStream.drawString(title);
+                if (subtitle != null) {
+                    contentStream.setFont(PDType1Font.HELVETICA, subtitleFontSize);
+                    contentStream.moveTextPositionByAmount(0,  -1.5f * subtitleFontSize);
+                    contentStream.drawString(subtitle);
+                }
+                contentStream.endText();
+                contentStream.close();
+            }
+            doc.save(file);
+            doc.close();
+        } catch(Exception e) {
+            e.printStackTrace();
+            return;
+        }
     }
-    
+
 
     private void combineExports(String filename) throws COSVisitorException, IOException {
-    	PDFMergerUtility ut = new PDFMergerUtility();
-	    for (File file: this.toCombine) {
-	    	ut.addSource(file);
-	    }
-	    ut.setDestinationFileName(filename);
-	    ut.mergeDocuments();
+        PDFMergerUtility ut = new PDFMergerUtility();
+        for (File file: this.toCombine) {
+            ut.addSource(file);
+        }
+        ut.setDestinationFileName(filename);
+        ut.mergeDocuments();
     }
-    
+
     private void printGraphStats(String description, GraphModel graphModel) {
         System.out.println(description);
 

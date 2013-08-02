@@ -5,6 +5,7 @@ Usage:
 
 """
 import os
+import subprocess
 
 import pygraphviz
 from docopt import docopt
@@ -14,15 +15,38 @@ from bigpicture import retrieve_config
 
 arguments = docopt(__doc__)
 
-model_file = retrieve_config('model-reduced-dot-file', arguments, 'live-state')
+dot_file = retrieve_config('model-reduced-dot-file', arguments, 'live-state')
+graphviz_image_prefix = retrieve_config('graphviz-image-prefix', arguments, 'live-state')
 
-graphviz_image_prefix = retrieve_config('graphviz-image-prefix', {}, 'live-state')
+gexf_file = retrieve_config('model-reduced-gexf-file', arguments, 'live-state')
+gephi_image_prefix = retrieve_config('gephi-image-prefix', arguments, 'live-state')
+protocols_to_render = retrieve_config('protocols-to-render', arguments, 'live-state').split()
 
-os.makedirs(os.path.dirname(graphviz_image_prefix))
+print "rendering model in different variants"
 
+print "-- settings"
+print "---- dot file: %s" % dot_file
+print "---- gexf file: %s" % gexf_file
+print "---- protocols to render: %s" % protocols_to_render
+
+print "-- gephi rendering"
+try:
+    os.makedirs(os.path.dirname(gephi_image_prefix))
+except OSError, e:
+    if e.errno != 17:
+        raise e
+result = subprocess.call(['java', '-jar', 'lib/bigpicture.jar', gexf_file, gephi_image_prefix] + protocols_to_render)
+print "---- exit code: %i" % result
+
+print "-- graphviz rendering"
+try:
+    os.makedirs(os.path.dirname(graphviz_image_prefix))
+except OSError, e:
+    if e.errno != 17:
+        raise e
 for layout in ["neato", "twopi"]:    # dot: takes too long for large graphs
-    print "-- rendering graph in %s layout" % layout
-    graph = pygraphviz.AGraph(model_file)
+    print "---- %s layout" % layout
+    graph = pygraphviz.AGraph(dot_file)
     graph.graph_attr.update(size='40,30')
     graph.node_attr.update(shape='none', fontsize='6', fontcolor='#40404070')
     graph.edge_attr.update(splines=True, fontsize='0', arrowsize=.4)
@@ -31,13 +55,4 @@ for layout in ["neato", "twopi"]:    # dot: takes too long for large graphs
     graph.layout(prog=layout)
     graph.draw(graphviz_image_prefix + ".%s.pdf" % layout)
 
-
-
-
-##!/bin/bash
-#set -e -E -u -o pipefail -C
-#
-#CLASSPATH=$(cat out/.classpath)
-#
-#java -cp $CLASSPATH bigpicture.LiveModelRenderer ../out/model.live.gexf out/model.live nfs ssh mysql http https imap imaps
-#
+print "done."
