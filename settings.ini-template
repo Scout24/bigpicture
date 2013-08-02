@@ -6,8 +6,12 @@ ip-mapping-file=%(raw-data-dir)s/ip.mappings
 blacklisted-ips=0.0.0.0 127.0.0.1
 
 [live-state]
+pdsh-defaults=-R ssh -f 10
 data-dir=%(raw-data-dir)s/live-state
 model-file=%(raw-data-dir)s/model.live.dot
 abc-file=%(raw-data-dir)s/model.live.abc
 model-reduced-dot-file=%(raw-data-dir)s/model.live.reduced.dot
 model-reduced-gexf-file=%(raw-data-dir)s/model.live.gexf
+model-gexf-file=%(raw-data-dir)s/model.live.gexf
+json-file=%(raw-data-dir)s/model.live.reduced.json
+ssh-query-host=jumphost
