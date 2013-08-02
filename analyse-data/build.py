@@ -28,6 +28,16 @@ def set_properties(project):
     project.get_property('distutils_commands').append('bdist_rpm')
     project.set_property('copy_resources_target', '$dir_dist')
     project.get_property('copy_resources_glob').append('setup.cfg')
+    project.get_property('copy_resources_glob').append('lib/*')
+    project.get_property('copy_resources_glob').append('out/bigpicture.jar')
+
+    project.install_file('/usr/share/bigpicture/', 'out/bigpicture.jar')
+    project.install_file('/usr/share/bigpicture/', 'lib/gephi-toolkit.jar')
+    project.install_file('/usr/share/bigpicture/', 'lib/gson-2.2.2.jar')
+    project.install_file('/usr/share/bigpicture/', 'lib/org-gephi-plugins-layout-noverlap.jar')
+    project.install_file('/usr/share/bigpicture/', 'lib/pdfbox-app-1.8.2.jar')
+    project.install_file('/usr/share/bigpicture/', 'lib/toolkit-javadoc.zip')
+    project.install_file('/usr/share/bigpicture/', 'lib/uk-ac-ox-oii-sigmaexporter.jar')
 
 @init(environments="teamcity")
 def set_properties_for_teamcity(project):
