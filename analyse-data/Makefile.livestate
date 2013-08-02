@@ -1,0 +1,15 @@
+.SECONDARY:
+
+SRCDIR = src/main/java
+OUTDIR = out/classes
+TARGET = out/bigpicture.jar
+
+$(TARGET):	$(OUTDIR)/bigpicture/*.class res/manifest.txt
+	jar cfvm $(TARGET) res/manifest.txt -C $(OUTDIR) bigpicture/
+
+$(OUTDIR)/%.class:	$(SRCDIR)/%.java
+	mkdir -p $(OUTDIR)
+	javac -cp lib/*:$(SRCDIR) -source 1.6 -d $(OUTDIR) $<
+
+clean:
+	rm -rf $(OUTDIR)

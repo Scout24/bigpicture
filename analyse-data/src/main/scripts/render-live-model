@@ -1,6 +1,43 @@
-#!/bin/bash
-set -e -E -u -o pipefail -C
+#!/usr/bin/env python
+"""
+Usage:
+    render-live-model [--model-reduced-dot-file=<STRING>]
 
-CLASSPATH=$(cat out/.classpath)
+"""
+import os
 
-java -cp $CLASSPATH bigpicture.LiveModelRenderer ../out/model.live.gexf out/model.live nfs ssh mysql http https imap imaps
+import pygraphviz
+from docopt import docopt
+
+from bigpicture import retrieve_config
+
+
+arguments = docopt(__doc__)
+
+model_file = retrieve_config('model-reduced-dot-file', arguments, 'live-state')
+
+graphviz_image_prefix = retrieve_config('graphviz-image-prefix', {}, 'live-state')
+
+os.makedirs(os.path.dirname(graphviz_image_prefix))
+
+for layout in ["neato", "twopi"]:    # dot: takes too long for large graphs
+    print "-- rendering graph in %s layout" % layout
+    graph = pygraphviz.AGraph(model_file)
+    graph.graph_attr.update(size='40,30')
+    graph.node_attr.update(shape='none', fontsize='6', fontcolor='#40404070')
+    graph.edge_attr.update(splines=True, fontsize='0', arrowsize=.4)
+    graph.edge_attr.update(decorate=False, group=True, concentrate=True)
+    graph.edge_attr.update(color='#40404030', fontcolor='transparent')
+    graph.layout(prog=layout)
+    graph.draw(graphviz_image_prefix + ".%s.pdf" % layout)
+
+
+
+
+##!/bin/bash
+#set -e -E -u -o pipefail -C
+#
+#CLASSPATH=$(cat out/.classpath)
+#
+#java -cp $CLASSPATH bigpicture.LiveModelRenderer ../out/model.live.gexf out/model.live nfs ssh mysql http https imap imaps
+#

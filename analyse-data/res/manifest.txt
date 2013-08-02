@@ -1,0 +1,2 @@
+Main-Class: bigpicture.LiveModelRenderer
+Class-Path: gephi-toolkit.jar gson-2.2.2.jar org-gephi-plugins-layout-noverlap.jar pdfbox-app-1.8.2.jar toolkit-javadoc.zip uk-ac-ox-oii-sigmaexporter.jar
