@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 """
 Usage:
-    augment_model [--model-file=<MODEL_FILE>] [--mapping-file=<MAPPING_FILE>]
+    augment-model [--model-file=<MODEL_FILE>] [--mapping-file=<MAPPING_FILE>]
 
 Options:
     --model-file=<MODEL_FILE>       where to find the model file
     --mapping-file=<MAPPING_FILE>   where to put the ip/hostname mapping
 """
-import re
 
 import pygraphviz
 
