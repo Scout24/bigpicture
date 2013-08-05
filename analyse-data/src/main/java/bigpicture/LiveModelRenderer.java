@@ -229,7 +229,7 @@ public class LiveModelRenderer {
 
         export(targetFilePrefix + ".final.pdf", "bigpicture | live state", (protocol != null) ? "protocol: " + protocol : null);
 
-        export2gexf(targetFilePrefix + "." + protocol + ".gexf");
+        export2gexf(targetFilePrefix + ".gexf");
         
         renderSigmaJs(protocol, graphModel);
 
