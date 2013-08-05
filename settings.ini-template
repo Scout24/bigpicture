@@ -15,3 +15,7 @@ model-reduced-gexf-file=%(raw-data-dir)s/model.live.gexf
 model-gexf-file=%(raw-data-dir)s/model.live.gexf
 json-file=%(raw-data-dir)s/model.live.reduced.json
 ssh-query-host=jumphost
+protocols-to-render=nfs ssh
+gephi-image-prefix=%(raw-data-dir)s/model.gephi
+graphviz-image-prefix=%(raw-data-dir)s/model.graphviz
+
