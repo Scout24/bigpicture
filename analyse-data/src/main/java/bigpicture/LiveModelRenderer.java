@@ -31,6 +31,7 @@ import org.gephi.graph.api.GraphModel;
 import org.gephi.graph.api.GraphView;
 import org.gephi.io.exporter.api.ExportController;
 import org.gephi.io.exporter.preview.PDFExporter;
+import org.gephi.io.exporter.spi.GraphExporter;
 import org.gephi.io.importer.api.Container;
 import org.gephi.io.importer.api.EdgeDefault;
 import org.gephi.io.importer.api.ImportController;
@@ -228,6 +229,8 @@ public class LiveModelRenderer {
 
         export(targetFilePrefix + ".final.pdf", "bigpicture | live state", (protocol != null) ? "protocol: " + protocol : null);
 
+        export2gexf(targetFilePrefix + "." + protocol + ".gexf");
+        
         renderSigmaJs(protocol, graphModel);
 
     }
@@ -268,6 +271,19 @@ public class LiveModelRenderer {
         addTitle(file, title, subtitle);
     }
 
+    private void export2gexf(String filename) {
+        ExportController ec = Lookup.getDefault().lookup(ExportController.class);
+        GraphExporter exporter = (GraphExporter) ec.getExporter("gexf");     //Get GEXF exporter
+        exporter.setExportVisible(true);  //Only exports the visible (filtered) graph
+//        exporter.setWorkspace(workspace);
+        try {
+            ec.exportFile(new File(filename), exporter);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return;
+        }
+    }
+    
     private void export2File(File file) {
         ExportController ec = Lookup.getDefault().lookup(ExportController.class);
         PDFExporter pdfExporter = (PDFExporter) ec.getExporter("pdf");

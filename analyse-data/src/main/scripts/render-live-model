@@ -25,9 +25,11 @@ protocols_to_render = retrieve_config('protocols-to-render', arguments, 'live-st
 print "rendering model in different variants"
 
 print "-- settings"
-print "---- dot file: %s" % dot_file
-print "---- gexf file: %s" % gexf_file
 print "---- protocols to render: %s" % protocols_to_render
+print "---- dot file: %s" % dot_file
+print "---- graphviz image prefix: %s" % graphviz_image_prefix
+print "---- gexf file: %s" % gexf_file
+print "---- gephi image prefix: %s" % gephi_image_prefix
 
 print "-- gephi rendering"
 try:
@@ -35,7 +37,7 @@ try:
 except OSError, e:
     if e.errno != 17:
         raise e
-result = subprocess.call(['java', '-jar', 'lib/bigpicture.jar', gexf_file, gephi_image_prefix] + protocols_to_render)
+result = subprocess.call(['java', '-jar', 'out/bigpicture.jar', gexf_file, gephi_image_prefix] + protocols_to_render)
 print "---- exit code: %i" % result
 
 print "-- graphviz rendering"
@@ -44,7 +46,7 @@ try:
 except OSError, e:
     if e.errno != 17:
         raise e
-for layout in ["neato", "twopi"]:    # dot: takes too long for large graphs
+for layout in []: # ["neato", "twopi"]:    # dot: takes too long for large graphs
     print "---- %s layout" % layout
     graph = pygraphviz.AGraph(dot_file)
     graph.graph_attr.update(size='40,30')

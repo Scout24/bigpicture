@@ -6,6 +6,7 @@ TARGET = out/bigpicture.jar
 
 $(TARGET):	$(OUTDIR)/bigpicture/*.class res/manifest.txt
 	jar cfvm $(TARGET) res/manifest.txt -C $(OUTDIR) bigpicture/
+	cp lib/*.jar out
 
 $(OUTDIR)/%.class:	$(SRCDIR)/%.java
 	mkdir -p $(OUTDIR)
