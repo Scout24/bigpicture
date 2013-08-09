@@ -3,9 +3,7 @@ Name: bigpicture-analysedata-docroot
 Version: 1
 Release: 1
 License: GPL
-Vendor: Immobilien Scout GmbH
 Packager: arne.hilmann@gmail.com
-Group: is24
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 BuildArch: noarch
@@ -22,10 +20,11 @@ rm -rf  %{buildroot}
 mkdir -p %{buildroot}
 cp -av src/* %{buildroot}/
 find %{buildroot} -type f -printf "/%%P\n" >files.lst
-mkdir -p %{buildroot}/var/www
+mkdir -p %{buildroot}/var/www/bigpicture
 
 %files -f files.lst
 %defattr(-,root,root,0755)
+%attr(0775,root,admins) /var/www/bigpicture/data
 
 %pre
 

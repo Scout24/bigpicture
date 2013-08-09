@@ -1,0 +1,8 @@
+body {
+  height: 100%;
+  font-family: "Droid Sans", "DejaVu Sans", "Impact", sans-serif;
+  font-size: 24pt;
+  letter-spacing: 0.05em;
+  color: #444;
+  background: -moz-linear-gradient(to bottom, white, #ccc);
+}
