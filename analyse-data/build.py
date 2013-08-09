@@ -1,3 +1,4 @@
+import os
 from pybuilder.core import use_plugin, init, Author
 
 use_plugin('filter_resources')
@@ -16,7 +17,7 @@ name = 'bigpicture-analysedata'
 summary = 'Creates bigpicture dot files '
 description = 'Create a BigPicture of your server landscape - the analyse-data part'
 license = 'proprietary'
-version = '0.6'
+version = '0.7'
 
 default_task = ['verify', 'publish']
 
@@ -29,14 +30,13 @@ def set_properties(project):
     project.set_property('copy_resources_target', '$dir_dist')
     project.get_property('copy_resources_glob').append('setup.cfg')
     project.get_property('copy_resources_glob').append('lib/*')
+    project.get_property('copy_resources_glob').append('cypher-query/*')
 
-    project.install_file('/usr/share/bigpicture/', 'lib/bigpicture.jar')
-    project.install_file('/usr/share/bigpicture/', 'lib/gephi-toolkit.jar')
-    project.install_file('/usr/share/bigpicture/', 'lib/gson-2.2.2.jar')
-    project.install_file('/usr/share/bigpicture/', 'lib/org-gephi-plugins-layout-noverlap.jar')
-    project.install_file('/usr/share/bigpicture/', 'lib/pdfbox-app-1.8.2.jar')
-    project.install_file('/usr/share/bigpicture/', 'lib/toolkit-javadoc.zip')
-    project.install_file('/usr/share/bigpicture/', 'lib/uk-ac-ox-oii-sigmaexporter.jar')
+    for f in os.listdir('lib'):
+        project.install_file('/usr/share/bigpicture/lib', os.path.join('lib', f))
+
+    for f in os.listdir('cypher-query'):
+        project.install_file('/usr/share/bigpicture/cypher-query', os.path.join('cypher-query',f))
 
 @init(environments="teamcity")
 def set_properties_for_teamcity(project):
