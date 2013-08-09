@@ -21,6 +21,7 @@ graphviz_image_prefix = retrieve_config('graphviz-image-prefix', arguments, 'liv
 gexf_file = retrieve_config('model-reduced-gexf-file', arguments, 'live-state')
 gephi_image_prefix = retrieve_config('gephi-image-prefix', arguments, 'live-state')
 protocols_to_render = retrieve_config('protocols-to-render', arguments, 'live-state').split()
+bigpicture_jar_dir = retrieve_config('jar-dir', {}, 'live-state')
 
 print "rendering model in different variants"
 
@@ -30,6 +31,7 @@ print "---- dot file: %s" % dot_file
 print "---- graphviz image prefix: %s" % graphviz_image_prefix
 print "---- gexf file: %s" % gexf_file
 print "---- gephi image prefix: %s" % gephi_image_prefix
+print "---- bigpicture jar dir: %s" % bigpicture_jar_dir
 
 print "-- gephi rendering"
 try:
@@ -37,7 +39,7 @@ try:
 except OSError, e:
     if e.errno != 17:
         raise e
-result = subprocess.call(['java', '-jar', 'out/bigpicture.jar', gexf_file, gephi_image_prefix] + protocols_to_render)
+result = subprocess.call(['java', '-jar', '%s/bigpicture.jar' % bigpicture_jar_dir, gexf_file, gephi_image_prefix] + protocols_to_render)
 print "---- exit code: %i" % result
 
 print "-- graphviz rendering"

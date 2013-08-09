@@ -4,10 +4,13 @@ raw-data-dir=/tmp/bigpicture/out
 [global]
 ip-mapping-file=%(raw-data-dir)s/ip.mappings
 blacklisted-ips=0.0.0.0 127.0.0.1
+database-base-url=http://localhost:8080
+database-url=%(database-base-url)s/db/data
 
 [live-state]
 pdsh-defaults=-R ssh -f 10
 data-dir=%(raw-data-dir)s/live-state
+
 model-file=%(raw-data-dir)s/model.live.dot
 abc-file=%(raw-data-dir)s/model.live.abc
 model-reduced-dot-file=%(raw-data-dir)s/model.live.reduced.dot
