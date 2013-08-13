@@ -230,7 +230,7 @@ public class LiveModelRenderer {
         export(targetFilePrefix + ".final.pdf", "bigpicture | live state", (protocol != null) ? "protocol: " + protocol : null);
 
         export2gexf(targetFilePrefix + ".gexf");
-        
+
         renderSigmaJs(protocol, graphModel);
 
     }
@@ -275,7 +275,7 @@ public class LiveModelRenderer {
         ExportController ec = Lookup.getDefault().lookup(ExportController.class);
         GraphExporter exporter = (GraphExporter) ec.getExporter("gexf");     //Get GEXF exporter
         exporter.setExportVisible(true);  //Only exports the visible (filtered) graph
-//        exporter.setWorkspace(workspace);
+        //        exporter.setWorkspace(workspace);
         try {
             ec.exportFile(new File(filename), exporter);
         } catch (IOException ex) {
@@ -283,7 +283,7 @@ public class LiveModelRenderer {
             return;
         }
     }
-    
+
     private void export2File(File file) {
         ExportController ec = Lookup.getDefault().lookup(ExportController.class);
         PDFExporter pdfExporter = (PDFExporter) ec.getExporter("pdf");
