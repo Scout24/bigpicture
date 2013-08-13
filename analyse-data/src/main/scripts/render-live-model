@@ -1,19 +1,26 @@
 #!/usr/bin/env python
 """
 Usage:
-    render-live-model [--model-reduced-dot-file=<STRING>]
+    render-live-model [--model-reduced-dot-file=<STRING>] [--index-only]
 
+Options:
+    --index-only    render index.html only [default: False]
 """
 import os
 import subprocess
+import re
 
 import pygraphviz
+import networkx as nx
 from docopt import docopt
 
-from bigpicture import retrieve_config
+from bigpicture import retrieve_config, makedirs
 
 
 arguments = docopt(__doc__)
+
+index_only = arguments.get("--index-only")
+render_all = not index_only
 
 dot_file = retrieve_config('model-reduced-dot-file', arguments, 'live-state')
 graphviz_image_prefix = retrieve_config('graphviz-image-prefix', arguments, 'live-state')
@@ -22,41 +29,112 @@ gexf_file = retrieve_config('model-reduced-gexf-file', arguments, 'live-state')
 gephi_image_prefix = retrieve_config('gephi-image-prefix', arguments, 'live-state')
 protocols_to_render = retrieve_config('protocols-to-render', arguments, 'live-state').split()
 bigpicture_jar_dir = retrieve_config('jar-dir', {}, 'live-state')
+docroot_dir = retrieve_config('docroot-dir', {}, 'live-state')
 
 print "rendering model in different variants"
 
 print "-- settings"
 print "---- protocols to render: %s" % protocols_to_render
 print "---- dot file: %s" % dot_file
+print "---- docroot: %s" % docroot_dir
 print "---- graphviz image prefix: %s" % graphviz_image_prefix
 print "---- gexf file: %s" % gexf_file
 print "---- gephi image prefix: %s" % gephi_image_prefix
 print "---- bigpicture jar dir: %s" % bigpicture_jar_dir
+print "---- index only: %s" % index_only
 
-print "-- gephi rendering"
-try:
-    os.makedirs(os.path.dirname(gephi_image_prefix))
-except OSError, e:
-    if e.errno != 17:
-        raise e
-result = subprocess.call(['java', '-jar', '%s/bigpicture.jar' % bigpicture_jar_dir, gexf_file, gephi_image_prefix] + protocols_to_render)
-print "---- exit code: %i" % result
+makedirs(docroot_dir)
 
-print "-- graphviz rendering"
+if render_all:
+    print "-- gephi rendering"
+    result = subprocess.call(['java', '-jar', '%s/bigpicture.jar' % bigpicture_jar_dir, gexf_file, gephi_image_prefix] + protocols_to_render)
+    print "---- exit code: %i" % result
+
+if render_all:
+    print "-- graphviz rendering"
+    for layout in []: # ["neato", "twopi"]:    # dot: takes too long for large graphs
+        print "---- %s layout" % layout
+        graph = pygraphviz.AGraph(dot_file)
+        graph.graph_attr.update(size='40,30')
+        graph.node_attr.update(shape='none', fontsize='6', fontcolor='#40404070')
+        graph.edge_attr.update(splines=True, fontsize='0', arrowsize=.4)
+        graph.edge_attr.update(decorate=False, group=True, concentrate=True)
+        graph.edge_attr.update(color='#40404030', fontcolor='transparent')
+        graph.layout(prog=layout)
+        graph.draw(graphviz_image_prefix + ".%s.pdf" % layout)
+
+
+if render_all:
+    print "-- graphviz rendering"
+    gm = nx.read_gexf(gexf_file)
+    print "---- %s: %s nodes, %s edges" % (gexf_file, gm.number_of_nodes(), gm.number_of_edges())
+    for protocol in protocols_to_render:
+        g = gm.copy()
+        for u, v, d in gm.edges_iter(data=True):
+            if d['protocol'] != protocol:
+                g.remove_edge(u, v)
+        g2 = g.copy()
+        for node in g2.nodes():
+            if g2.degree(node) < 1:
+                g.remove_node(node)
+        print "---- protocol %s: %s nodes, %s edges" % (protocol, g.number_of_nodes(), g.number_of_edges())
+        a = nx.to_agraph(g)
+        a.graph_attr.update(size='40,30')
+        a.node_attr.update(shape='none', fontsize='6', fontcolor='#40404070')
+        a.edge_attr.update(splines=True, fontsize='0', arrowsize=.4)
+        a.edge_attr.update(decorate=False, group=True, concentrate=True)
+        a.edge_attr.update(color='#40404030', fontcolor='transparent')
+        for layout in ["neato", "twopi", "dot"]:
+            filename = "%s.protocol_%s.%s.svg" % (graphviz_image_prefix, protocol, layout)
+            print "---- rendering %s" % filename
+            a.draw("%s.protocol_%s.%s.svg" % (graphviz_image_prefix, protocol, layout), prog=layout)
+
+print "-- index rendering"
+index_file = os.path.join(docroot_dir, 'index.html')
 try:
-    os.makedirs(os.path.dirname(graphviz_image_prefix))
+    os.remove(index_file)
 except OSError, e:
-    if e.errno != 17:
+    if e.errno != 2:
         raise e
-for layout in []: # ["neato", "twopi"]:    # dot: takes too long for large graphs
-    print "---- %s layout" % layout
-    graph = pygraphviz.AGraph(dot_file)
-    graph.graph_attr.update(size='40,30')
-    graph.node_attr.update(shape='none', fontsize='6', fontcolor='#40404070')
-    graph.edge_attr.update(splines=True, fontsize='0', arrowsize=.4)
-    graph.edge_attr.update(decorate=False, group=True, concentrate=True)
-    graph.edge_attr.update(color='#40404030', fontcolor='transparent')
-    graph.layout(prog=layout)
-    graph.draw(graphviz_image_prefix + ".%s.pdf" % layout)
+graphs = {}
+for dirpath, dirnames, filenames in os.walk(docroot_dir):
+    for filename in filenames:
+        if filename == "index.html":
+            path = dirpath.replace(docroot_dir, '').lstrip('/')
+            href = os.path.join(path, filename)
+            match = re.search("protocol_([^./]*)", path)
+            protocol = match.group(1) if match else "all"
+            print "---- %s: gephi/%s/sigmajs" % (path, protocol)
+            graphs.setdefault(protocol, []).append( ("gephi", href, "sigmajs") )
+        if filename.endswith("svg") and "graphviz" in filename:
+            layout = filename.split('.')[-2]
+            protocol = filename.split('.')[-3].replace("protocol_", "")
+            print "---- %s: graphviz/%s/%s" % (filename, protocol, layout)
+            graphs.setdefault(protocol, []).append( ("graphviz", filename, layout) )
+        if filename.endswith("pdf") and "gephi" in filename:
+            match = re.search("protocol_([^.]*)", filename)
+            protocol = match.group(1) if match else "all"
+            print "---- %s: gephi/%s/yifanhu" % (filename, protocol)
+            graphs.setdefault(protocol, []).append( ("gephi", filename, "yifanhu") )
+
+
+
+with open(index_file, 'w') as index:
+    index.write('<html><head><title>bigpicture | live data</title>\n')
+    index.write('<link rel="stylesheet" type="text/css" href="../../bigpicture.css"/>\n')
+    index.write('<link rel="stylesheet" type="text/css" href="../../index.css"/>\n')
+    index.write('<link rel="stylesheet" type="text/css" href="../../live-state/live-data.css"/>\n')
+    index.write('</head><body><h1>bigpicture | live data</h1>\n')
+
+    index.write('<table><tr><th>protocol</th><td colspan="5">layouts</td></tr>\n')
+    for protocol in sorted(graphs):
+        links = graphs[protocol]
+        index.write('<tr><th>%s</th>\n' % protocol)
+        for layouter, href, variant in sorted(links):
+            index.write('<td><a href="%s">%s</a></td>\n' % (href, variant))
+        index.write('</tr>\n')
+    index.write('</table>\n')
+
+    index.write('</body></html>\n')
 
 print "done."
