@@ -7,3 +7,30 @@ ul {
 ul li:before {
   content: "\25B6 \0020";
 }
+
+table td {
+  padding: 5px 10px 5px;
+}
+
+th {
+  text-align: right;
+  padding-right: 1em;
+  padding-left: 1em;
+}
+th, td {
+  font-size: 24pt;
+}
+
+tr:first-child * {
+  border-bottom: 1pt solid #444;
+}
+
+a, a:visited {
+  color: #448;
+  text-decoration: none;
+}
+a:hover {
+  color: #44f;
+  text-decoration: underline;
+}
+
