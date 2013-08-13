@@ -7,6 +7,7 @@ Options:
     --model-file=<MODEL_FILE>       where to find the model file
     --mapping-file=<MAPPING_FILE>   where to put the ip/hostname mapping
 """
+import re
 
 import pygraphviz
 
@@ -60,14 +61,17 @@ for edge in g.edges_iter():
         nodes.setdefault(new_name, set()).add(node)
 
 old2new = {}
+new2old = {}
 for new_name, old_names in nodes.iteritems():
     if len(old_names) > 1:
         print "---- problematic shortname: %s" % new_name
-        print "------ corresponding long names: %s" % " ".join(old_names)
+        print "------ corresponding long names: %s" % " ".join([map_ip(n) for n in old_names])
         for old_name in old_names:
             old2new[old_name] = map_ip(old_name)
     else:
-        old2new[old_names.pop()] = new_name
+        old_name = old_names.pop()  # just one, see if clause
+        old2new[old_name] = new_name
+        new2old[new_name] = old_name
 
 def get_new_name(old_name):
     return old2new.get(old_name, old_name)
@@ -77,11 +81,23 @@ for edge in g.edges_iter():
 print "---- edges augmented"
 
 for node in h.nodes_iter():
-    if len(node) != 8:
-        continue
-    node.attr['loc'] = node[0:3]
-    node.attr['typ'] = node[3:6]
-    node.attr['loctyp'] = node[0:6]
+    ip = new2old.get(node, node)
+    node.attr['ip'] = ip
+    origname = map_ip(ip)
+    node.attr['origname'] = origname
+    if re.match('[a-z]', origname):
+        try:
+            name, subnet = origname.split(".", 1)
+            node.attr['subnet'] = subnet
+            if len(name) != 8:
+                continue
+            node.attr['loc'] = name[0:3]
+            node.attr['typ'] = name[3:6]
+            node.attr['loctyp'] = name[0:6]
+        except Exception, e:
+            print "strange hostname: %s" % origname
+    else:
+        node.attr['subnet'] = node.attr['loc'] = node.attr['typ'] = node.attr['loctyp'] = None
 print "---- nodes augmented"
 
 print "-- writing back to %s" % model_file
