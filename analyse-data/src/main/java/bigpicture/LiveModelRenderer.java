@@ -72,14 +72,14 @@ public class LiveModelRenderer {
         new LiveModelRenderer().run(args[0], args[1], Arrays.copyOfRange(args, 2, args.length));
     }
 
-    private void run(final String sourceFile, final String targetFilePrefix, String[] protocols) {
+    private void run(final String sourceFile, final String filePrefix, String[] protocols) {
         boolean includeSubsteps = false;
         for (String protocol: protocols) {
-            renderSubgraph(sourceFile, targetFilePrefix + ".protocol_" + protocol, protocol, includeSubsteps);
+            renderSubgraph(sourceFile, filePrefix + ".protocol_" + protocol, protocol, includeSubsteps);
         }
-        renderSubgraph(sourceFile, targetFilePrefix, null, includeSubsteps);
+        renderSubgraph(sourceFile, filePrefix, null, includeSubsteps);
         try {
-            combineExports(targetFilePrefix + ".pdf");
+            combineExports(filePrefix + ".pdf");
         } catch (Exception e1) {
             e1.printStackTrace();
         }
@@ -227,18 +227,19 @@ public class LiveModelRenderer {
             export(targetFilePrefix + ".noverlap-layout.pdf", "layout: reduce overlap");
         }
 
-        export(targetFilePrefix + ".final.pdf", "bigpicture | live state", (protocol != null) ? "protocol: " + protocol : null);
+        export(targetFilePrefix + ".pdf", "bigpicture | live state", (protocol != null) ? "protocol: " + protocol : null);
 
         export2gexf(targetFilePrefix + ".gexf");
 
-        renderSigmaJs(protocol, graphModel);
+        renderSigmaJs(protocol, graphModel, targetFilePrefix);
 
     }
 
-    private void renderSigmaJs(final String protocol, GraphModel graphModel) {
+    private void renderSigmaJs(final String protocol, GraphModel graphModel, String outdir) {
         SigmaExporter se = new SigmaExporter();
         se.setWorkspace(graphModel.getWorkspace());
-        File outfile = new File(System.getProperty("user.dir"), "out/sigmajs/" + protocol);
+        File outfile = new File(outdir);
+        outfile.mkdirs();
 
         ConfigFile cf = new ConfigFile();
         cf.setDefaults();
@@ -252,6 +253,7 @@ public class LiveModelRenderer {
         cf.getInformationPanel().put("groupByEdgeDirection", Boolean.TRUE);
         cf.getText().put("title", "bigpicture | live state - protocol " + protocol);
         se.setConfigFile(cf, outfile.getAbsolutePath());
+        System.out.println("outfile: " + outfile.getAbsolutePath());
         try {
             se.execute();
         } catch (Exception e) {

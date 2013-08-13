@@ -15,18 +15,13 @@ import os
 
 from docopt import docopt
 
-from bigpicture import get_config
-from bigpicture.analysedata import netstats2dot
+from bigpicture import retrieve_config
+from bigpicture.analysedata import netstats2dot, makedirs
 
 arguments = docopt(__doc__)
 
-data_dir = arguments.get('--data-dir')
-if not data_dir:
-    data_dir = get_config('live-state', 'data-dir')
-
-model_file = arguments.get('--model-file')
-if not model_file:
-    model_file = get_config('live-state', 'model-file')
+data_dir = retrieve_config('data-dir', arguments, 'live-state')
+model_file = retrieve_config('model-file', arguments, 'live-state')
 
 print "building model from live data"
 
@@ -38,6 +33,7 @@ input_files = glob.glob(os.path.join(data_dir, "*", "*"))
 print "---- %i input files found" % len(input_files)
 
 print "-- creating model"
+makedirs(os.path.dirname(model_file))
 with open(model_file, 'w') as mf:
     mf.write(netstats2dot(input_files))
 

@@ -1,7 +1,7 @@
 #!/bin/bash
+set -e -E
 
 build-live-model
 augment-model
 convert-model
-
 render-live-model
