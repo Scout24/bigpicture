@@ -1,0 +1,129 @@
+#!/usr/bin/env python
+"""
+Usage:
+    diff-live-model
+
+When not given on command line, options are taken from /etc/bigpicture.conf.d/settings.ini
+"""
+import os
+
+import networkx as nx
+
+from docopt import docopt
+
+from bigpicture import get_config, retrieve_config, init_config, makedirs
+
+
+def get_graph_stats(g):
+    return "%s nodes, %s edges  %s" % (g.number_of_nodes(), g.size(), type(g))
+
+arguments = docopt(__doc__)
+
+init_config({'variant': 'all'})
+model_file = retrieve_config('model-gexf-file', arguments, 'live-state')
+protocols = retrieve_config('protocols-to-render', {}, 'live-state').split()
+
+print "differentiating model, generating different formats for post-processing"
+
+print "-- settings"
+print "---- model file: %s" % model_file
+print "---- protocols: %s" % protocols
+
+print "-- loading model"
+g = nx.read_gexf(model_file)
+print "---- %s" % get_graph_stats(g)
+
+print "-- dates and timestamps"
+timestamps = set()
+dates = set()
+for u, v, d in g.edges_iter(data=True):
+    timestamps.add(d.get('timestamp'))
+    dates.add(d.get('date'))
+timestamps = sorted(timestamps, reverse=True)
+dates = sorted(dates, reverse=True)
+for timestamp in timestamps:
+    print "---- %s" % timestamp
+for date in dates:
+    print "---- %s" % date
+
+def filter(g, key, value, add_attrs=None):
+    add_attrs = add_attrs if add_attrs else {}
+    h = g.copy()
+    h.clear()
+    h.add_nodes_from(g.nodes(data=True))
+    for u, v, d in g.edges_iter(data=True):
+        if d[key] == value:
+            d.update(add_attrs)
+            h.add_edge(u, v, attr_dict=d)
+    return h
+
+print "-- variants"
+for variant, key, value in []: #[('last1h', 'timestamp', timestamps[0])]:
+    init_config({'variant': variant})
+    h = filter(g, 'timestamp', timestamps[0])
+    print "---- %s: %s" % (variant, get_graph_stats(h))
+    gexf_file = get_config('live-state', 'model-gexf-file')
+    makedirs(os.path.dirname(gexf_file))
+    print "------ writing %s" % gexf_file
+    nx.write_gexf(h, gexf_file)
+
+
+def difference(g1, g2):
+    h = g1.copy()
+    h.remove_edges_from(g2.edges())
+    return h
+
+def set_edge_attr(g, key, value):
+    for u, v, d in g.edges_iter(data=True):
+        d[key] = value
+
+print "-- calc differences"
+
+diffs = g.copy()
+diffs.clear()
+
+diffattr = 'last1h'
+key = 'timestamp'
+avalue = timestamps[0]
+bvalue = timestamps[1]
+
+print "---- diffattr: %s" % diffattr
+print "------ attr: %s" % key
+print "------ a value: %s" % avalue
+print "------ b value: %s" % bvalue
+
+a = filter(g, key, avalue)
+print "------ a: %s" % get_graph_stats(a)
+
+b = filter(g, key, bvalue)
+print "------ b: %s" % get_graph_stats(b)
+
+for protocol in protocols:
+    print "------ protocol %s" % protocol
+
+    default_attrs = {'diff-type': '', 'diff-attr' : 'last1h'}
+    pa = filter(a, 'protocol', protocol, default_attrs)
+    print "-------- a: %s" % get_graph_stats(pa)
+
+    pb = filter(b, 'protocol', protocol, default_attrs)
+    print "-------- b: %s" % get_graph_stats(pb)
+
+    new_connections = difference(pa, pb)
+    set_edge_attr(new_connections, 'diff-type', 'new')
+    print "-------- new: %s" % get_graph_stats(new_connections)
+
+    lost_connections = difference(pb, pa)
+    set_edge_attr(lost_connections, 'diff-type', 'lost')
+    print "-------- lost: %s" % get_graph_stats(lost_connections)
+
+    diffs.add_edges_from(new_connections.edges_iter(data=True))
+    diffs.add_edges_from(lost_connections.edges_iter(data=True))
+
+variant = '%s-diff' % diffattr
+init_config({'variant': variant})
+gexf_file = get_config('live-state', 'model-gexf-file')
+print "---- writing %s" % gexf_file
+makedirs(os.path.dirname(gexf_file))
+nx.write_gexf(diffs, gexf_file)
+
+print "done."
