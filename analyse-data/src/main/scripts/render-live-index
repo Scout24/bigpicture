@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+"""
+Usage:
+    render-live-index [--variant=<STRING>]
+
+Options:
+    --variant=<STRING>  name for the rendered variant [default: all]
+"""
+import os
+import re
+
+from docopt import docopt
+
+from bigpicture import retrieve_config, makedirs, init_config
+
+arguments = docopt(__doc__)
+
+variant = arguments.get('--variant')
+init_config({'variant': variant})
+
+variant_dir = retrieve_config('variant-dir', {}, 'live-state')
+
+print "rendering an index page for all rendered live models"
+
+print "-- settings"
+print "---- variant dir: %s" % variant_dir
+
+makedirs(variant_dir)
+
+print "-- index rendering"
+index_file = os.path.join(variant_dir, 'index.html')
+try:
+    os.remove(index_file)
+except OSError, e:
+    if e.errno != 2:
+        raise e
+graphs = {}
+for dirpath, dirnames, filenames in os.walk(variant_dir):
+    path = dirpath.replace(variant_dir, '').lstrip('/')
+    variant = path.split('/', 1)[0]
+    for filename in filenames:
+        if filename == "index.html" and dirpath.endswith('network'):
+            href = os.path.join(path, filename)
+            match = re.search("protocol_([^./]*)", path)
+            protocol = match.group(1) if match else "*"
+            print "---- %s: gephi/%s/sigmajs" % (path, protocol)
+            graphs.setdefault(protocol, []).append( ("gephi", "sigmajs", href) )
+        if filename.endswith("svg") and "graphviz" in filename:
+            layout = filename.split('.')[-2]
+            protocol = filename.split('.')[-3].replace("protocol_", "")
+            href = os.path.join(path, filename)
+            print "---- %s: graphviz/%s/%s" % (href, protocol, layout)
+            graphs.setdefault(protocol, []).append( ("graphviz", layout, href) )
+        if filename.endswith("pdf") and "gephi" in filename:
+            match = re.search("protocol_([^.]*)", filename)
+            protocol = match.group(1) if match else "*"
+            href = os.path.join(path, filename)
+            print "---- %s: gephi/%s/yifanhu" % (href, protocol)
+            graphs.setdefault(protocol, []).append( ("gephi", "yifanhu", href) )
+
+with open(index_file, 'w') as index:
+    index.write('<html><head><title>bigpicture | live data | %s</title>\n' % variant)
+    index.write('<link rel="stylesheet" type="text/css" href="../../../bigpicture.css"/>\n')
+    index.write('<link rel="stylesheet" type="text/css" href="../../../index.css"/>\n')
+    index.write('<link rel="stylesheet" type="text/css" href="../../../live-state/live-data.css"/>\n')
+    index.write('</head><body><h1>bigpicture | live data | %s</h1>\n' % variant)
+
+    index.write('<ul>\n')
+    index.write("""<li><a href='../../../live-state/smallhives.html?source=../data/live-state/model.live.reduced.json&mapping0={"ham":1,"ber":2}&mapping1={"ham":2,"ber":2,"tuv":1}'>small multiple: host level</a></li>\n""")
+    index.write("""<li><a href='../../../live-state/hive.html?source=../data/live-state/model.live.reduced.json&mapping0={"ham":1,"ber":2}'>self-connected: prod vs rest</a></li>\n""")
+    index.write("""<li><a href='../../../live-state/hive.html?source=../data/live-state/model.live.reduced.json&mapping0={"ham":2,"ber":2,"tuv":1}'>self-connected: loc levels</a></li>\n""")
+    index.write('</ul>\n')
+
+    index.write('<table><tr><th>protocol</th><td colspan="5">layouts</td></tr>\n')
+    for protocol in sorted(graphs):
+        links = graphs[protocol]
+        index.write('<tr><th>%s</th>\n' % protocol)
+        for layouter, variant, href in sorted(links):
+            index.write('<td><a href="%s">%s</a></td>\n' % (href, variant))
+        index.write('</tr>\n')
+    index.write('</table>\n')
+
+    index.write('</body></html>\n')
+
+print "done."

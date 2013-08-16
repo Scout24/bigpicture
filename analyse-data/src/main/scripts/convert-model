@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 """
 Usage:
-    reduce_model [--model-file=<MODEL_FILE>] [--model-reduced-dot-file=<REDUCED_DOT_MODEL>] [--model-gexf-file=<STRING>] [--model-reduced-gexf-file=<REDUCED_GEXF_MODEL>] [--json-file=<STRING>] [--ssh-query-host=<HOSTNAME>]
+    convert_model [--model-file=<MODEL_FILE>] [--model-reduced-dot-file=<REDUCED_DOT_MODEL>] [--model-gexf-file=<STRING>] [--model-reduced-gexf-file=<REDUCED_GEXF_MODEL>] [--json-file=<STRING>] [--ssh-query-host=<HOSTNAME>]
 
 When not given on command line, options are taken from /etc/bigpicture.conf.d/settings.ini
 """
+import os
 
 import networkx as nx
 
 from docopt import docopt
 
-from bigpicture import retrieve_config
+from bigpicture import retrieve_config, init_config, makedirs
 from bigpicture.analysedata.dot import model2json
 
 
@@ -18,6 +19,8 @@ def get_graph_stats(filename, g):
     return "%s, %s nodes, %s edges" % (type(g), g.number_of_nodes(), g.size())
 
 arguments = docopt(__doc__)
+
+init_config({'variant': 'all'})
 
 model_file = retrieve_config('model-file', arguments, 'live-state')
 reduced_dot_file = retrieve_config('model-reduced-dot-file', arguments, 'live-state')
@@ -56,15 +59,19 @@ print "---- %s" % get_graph_stats(reduced_dot_file, h)
 
 print "-- storing new models"
 print "---- writing %s" % reduced_dot_file
+makedirs(os.path.dirname(reduced_dot_file))
 nx.drawing.write_dot(h, reduced_dot_file)
 
 print "---- writing %s" % gexf_file
+makedirs(os.path.dirname(gexf_file))
 nx.write_gexf(g, gexf_file)
 
 print "---- writing %s" % reduced_gexf_file
+makedirs(os.path.dirname(reduced_gexf_file))
 nx.write_gexf(h, reduced_gexf_file)
 
 print "---- writing %s" % json_file
+makedirs(os.path.dirname(json_file))
 model2json(h, json_file)
 
 print "done."
