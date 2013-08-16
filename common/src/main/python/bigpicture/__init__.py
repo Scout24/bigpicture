@@ -6,6 +6,8 @@ import ConfigParser
 
 BLACKLIST = set(["localhost"])
 SETTINGS_FILE = "/etc/bigpicture.conf.d/settings.ini"
+config = None   # lazy loading
+
 
 def makedirs(d):
     try:
@@ -24,19 +26,22 @@ def is_blacklisted(host):
     return False
 
 
-config = None   # lazy loading
 def get_config(section, key):
     global config
     if not config:
-        config = ConfigParser.ConfigParser()
+        config = ConfigParser.ConfigParser(allow_no_value=True)
         config.readfp(open(SETTINGS_FILE))
-    try:
-        return config.get(section, key)
-    except ConfigParser.NoOptionError:
-        return None
+    return config.get(section, key)
+
 
 def retrieve_config(key, arguments, config_section):
     result = arguments.get('--%s' % key)
     if not result:
         result = get_config(config_section, key)
     return result
+
+
+def init_config(defaults):
+    global config
+    config = ConfigParser.ConfigParser(defaults=defaults, allow_no_value=True)
+    config.readfp(open(SETTINGS_FILE))
