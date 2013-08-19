@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+import os
+import sys
+
+from datetime import date, timedelta
+
+from bigpicture import retrieve_config
+
+def remove_raw_data_older_than(days):
+    days = int(days) if days else 1;
+    threshold_date = date.today() - timedelta(days=days)
+    threshold = threshold_date.strftime("%Y-%m-%dT%H:%M:%S")
+
+    data_dir = retrieve_config('data-dir', {}, 'live-state')
+
+    for dirpath, dirnames, filenames in os.walk(data_dir):
+        for filename in [f for f in filenames if f < threshold]:
+            to_be_removed = os.path.join(dirpath, filename)
+            print "removing %s" % to_be_removed
+            os.remove(to_be_removed)
+
+
+if __name__ == "__main__":
+    remove_raw_data_older_than(sys.argv[1])
