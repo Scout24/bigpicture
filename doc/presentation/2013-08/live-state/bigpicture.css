@@ -1,36 +1,13 @@
-body {
-  font-size: 200%;
-  text-align: center;
-#  font-family: Libre Baskerville;
-  font-family: sans-serif;
-  color: #444;
-  letter-spacing: 0.02em;
+#fulldata, #protocoldata {
+  background-size: cover;
+  padding: 300px 0px;
+  background-repeat: none;
 }
 
-a {
-  text-decoration: none;
-  color: black;
+#fulldata {
+  background-image: url(res/demon2.png);
 }
 
-#div {
-#  border: 1px dashed red;
-#}
-
-#intro {
-  width: 1024px;
-  height: 768px;
-  background-size: 1024px 768px;
-  background-repeat: no-repeat;
+#protocoldata {
+  background-image: url(res/all/model.gephi.protocol_nfs.svg);
 }
-
-.whitetext {
-  color: white;
-}
-.arrow-down {
-  margin: -15px 10% -15px;
-}
-
-.arrow-down:after {
-  content: "\2193";
-}
-

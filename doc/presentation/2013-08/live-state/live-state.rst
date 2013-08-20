@@ -24,12 +24,16 @@ What? Where? When?
 
 ----
 
+:id: fulldata
+
 Full Data: Too Much
 ===================
 
 Hairball
 
 ----
+
+:id: protocoldata
 
 Reduce to Layers
 ================
@@ -47,6 +51,7 @@ Reduce to changes
 =================
 
 Differentiate:
+
 * last1h vs hour before
 * today vs yesterday
   
