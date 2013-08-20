@@ -7,8 +7,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.pdfbox.exceptions.COSVisitorException;
+import org.apache.pdfbox.pdfviewer.MapEntry;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
@@ -29,8 +31,10 @@ import org.gephi.graph.api.Graph;
 import org.gephi.graph.api.GraphController;
 import org.gephi.graph.api.GraphModel;
 import org.gephi.graph.api.GraphView;
+import org.gephi.graph.dhns.utils.avl.EdgeTree;
 import org.gephi.io.exporter.api.ExportController;
 import org.gephi.io.exporter.preview.PDFExporter;
+import org.gephi.io.exporter.preview.SVGExporter;
 import org.gephi.io.exporter.spi.GraphExporter;
 import org.gephi.io.importer.api.Container;
 import org.gephi.io.importer.api.EdgeDefault;
@@ -38,6 +42,10 @@ import org.gephi.io.importer.api.ImportController;
 import org.gephi.io.processor.plugin.DefaultProcessor;
 import org.gephi.layout.plugin.force.StepDisplacement;
 import org.gephi.layout.plugin.force.yifanHu.YifanHuLayout;
+import org.gephi.partition.api.Part;
+import org.gephi.partition.api.Partition;
+import org.gephi.partition.api.PartitionController;
+import org.gephi.partition.plugin.EdgeColorTransformer;
 import org.gephi.plugins.layout.noverlap.NoverlapLayout;
 import org.gephi.plugins.layout.noverlap.NoverlapLayoutBuilder;
 import org.gephi.preview.api.PreviewController;
@@ -45,8 +53,11 @@ import org.gephi.preview.api.PreviewModel;
 import org.gephi.preview.api.PreviewProperties;
 import org.gephi.preview.api.PreviewProperty;
 import org.gephi.preview.types.EdgeColor;
+import org.gephi.project.api.Project;
 import org.gephi.project.api.ProjectController;
 import org.gephi.project.api.Workspace;
+import org.gephi.project.api.WorkspaceProvider;
+import org.gephi.project.impl.WorkspaceProviderImpl;
 import org.gephi.ranking.api.Ranking;
 import org.gephi.ranking.api.RankingController;
 import org.gephi.ranking.api.Transformer;
@@ -78,35 +89,38 @@ public class LiveModelRenderer {
             renderSubgraph(sourceFile, filePrefix + ".protocol_" + protocol, protocol, includeSubsteps);
         }
         renderSubgraph(sourceFile, filePrefix, null, includeSubsteps);
-        try {
-            combineExports(filePrefix + ".pdf");
-        } catch (Exception e1) {
-            e1.printStackTrace();
-        }
+//        try {
+//            combineExports(filePrefix + ".pdf");
+//        } catch (Exception e1) {
+//            e1.printStackTrace();
+//        }
     }
 
     private void renderSubgraph(final String sourceFile, final String targetFilePrefix, final String protocol, boolean includeSubsteps) {
         ProjectController pc = Lookup.getDefault().lookup(ProjectController.class);
         pc.newProject();
+        WorkspaceProviderImpl wp = new WorkspaceProviderImpl(pc.getCurrentProject());
+        System.out.println(wp);
         Workspace workspace = pc.getCurrentWorkspace();
+        wp.addWorkspace(workspace);
 
         //Get models and controllers for this new workspace - will be useful later
-        AttributeModel attributeModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
         GraphModel graphModel = Lookup.getDefault().lookup(GraphController.class).getModel();
         PreviewModel model = Lookup.getDefault().lookup(PreviewController.class).getModel();
         ImportController importController = Lookup.getDefault().lookup(ImportController.class);
         FilterController filterController = Lookup.getDefault().lookup(FilterController.class);
         RankingController rankingController = Lookup.getDefault().lookup(RankingController.class);
-
+        
         //Preview
         PreviewProperties pps = model.getProperties();
         pps.putValue(PreviewProperty.NODE_BORDER_WIDTH, 0);
-        //        pps.putValue(PreviewProperty.NODE_OPACITY, .9f);
         pps.putValue(PreviewProperty.SHOW_NODE_LABELS, Boolean.TRUE);
-        pps.putValue(PreviewProperty.EDGE_COLOR, new EdgeColor(Color.LIGHT_GRAY));
-        pps.putValue(PreviewProperty.EDGE_THICKNESS, new Float(0.1f));
+//        pps.putValue(PreviewProperty.EDGE_COLOR, new EdgeColor(Color.LIGHT_GRAY));
+        pps.putValue(PreviewProperty.EDGE_THICKNESS, new Float(2f));
         pps.putValue(PreviewProperty.NODE_LABEL_FONT, model.getProperties().getFontValue(PreviewProperty.NODE_LABEL_FONT).deriveFont(8));
-        pps.putValue(PreviewProperty.EDGE_CURVED, Boolean.TRUE);
+        pps.putValue(PreviewProperty.NODE_LABEL_PROPORTIONAL_SIZE, Boolean.FALSE);
+        pps.putValue(PreviewProperty.EDGE_CURVED, Boolean.FALSE);
+        pps.putValue(PreviewProperty.ARROW_SIZE, 1f);
 
         //Import file
         Container container;
@@ -130,37 +144,59 @@ public class LiveModelRenderer {
 
         if (protocol != null) {
             //Filter
-            AttributeColumn ac = attributeModel.getEdgeTable().getColumn("protocol");
-            EqualStringFilter arf = new AttributeEqualBuilder.EqualStringFilter(ac);
-            arf.init(graphModel.getGraph());
-            arf.setPattern(protocol);
-            Query protocolQuery = filterController.createQuery(arf);
-            GraphView protocolView = filterController.filter(protocolQuery);
-            graphModel.setVisibleView(protocolView);    //Set the filter result as the visible view
-            printGraphStats("protocol=" + protocol, graphModel);
-            if (includeSubsteps) {
-                export(targetFilePrefix + ".pdf", "edge filter: protocol=" + protocol);
+        	{
+	        	AttributeModel attributeModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
+	            AttributeColumn ac = attributeModel.getEdgeTable().getColumn("protocol");
+	            EqualStringFilter arf = new AttributeEqualBuilder.EqualStringFilter(ac);
+	            arf.init(graphModel.getGraph());
+	            arf.setPattern(protocol);
+	            Query protocolQuery = filterController.createQuery(arf);
+	            GraphView protocolView = filterController.filter(protocolQuery);
+	            graphModel.setVisibleView(protocolView);    //Set the filter result as the visible view
+	            printGraphStats("protocol=" + protocol, graphModel);
+	            if (includeSubsteps) {
+	                export(targetFilePrefix + ".pdf", "edge filter: protocol=" + protocol);
+	            }
+        	}
+            {
+	            Workspace newWorkspace = pc.duplicateWorkspace(pc.getCurrentWorkspace());
+	            wp.setCurrentWorkspace(newWorkspace);
+	            GraphModel newGraphModel = Lookup.getDefault().lookup(GraphController.class).getModel(newWorkspace);
+	            newGraphModel.clear();
+	            newGraphModel.pushFrom(graphModel.getGraphVisible());
+	            
+	            DegreeRangeFilter degreeFilter = new DegreeRangeFilter();
+	            degreeFilter.init(newGraphModel.getGraphVisible());
+	            degreeFilter.setRange(new Range(1, Integer.MAX_VALUE));
+	            Query degreeQuery = filterController.createQuery(degreeFilter);
+	            GraphView degreeView = filterController.filter(degreeQuery);
+	            newGraphModel.setVisibleView(degreeView);
+	            printGraphStats("degree > 0", newGraphModel);
+
+	            graphModel = newGraphModel;
+//	            graphModel.clear();
+//	            graphModel.pushFrom(newGraphModel.getGraphVisible());
+
+//	            filterController.setSubQuery(degreeQuery, protocolQuery);
+//	            GraphView combinedView = filterController.filter(degreeQuery);
+//	            graphModel.setVisibleView(combinedView);    //Set the filter result as the visible view
+//	            printGraphStats("combined", graphModel);
+	
+	//            DegreeRangeFilter degreeFilter2 = new DegreeRangeFilter();
+	//            degreeFilter.init(newGraphModel.getGraphVisible());
+	//            degreeFilter.setRange(new Range(1, Integer.MAX_VALUE));
+	//            Query degreeQuery2 = filterController.createQuery(degreeFilter2);
+	//            GraphView degreeView2 = filterController.filter(degreeQuery2);
+	//            newGraphModel.setVisibleView(degreeView2);
+	//            printGraphStats("degree > 0", newGraphModel);
             }
-            DegreeRangeFilter degreeFilter = new DegreeRangeFilter();
-            degreeFilter.init(graphModel.getGraphVisible());
-            degreeFilter.setRange(new Range(1, Integer.MAX_VALUE));
-            Query degreeQuery = filterController.createQuery(degreeFilter);
-            GraphView degreeView = filterController.filter(degreeQuery);
-            graphModel.setVisibleView(degreeView);
-            printGraphStats("degree > 0", graphModel);
-
-            filterController.setSubQuery(degreeQuery, protocolQuery);
-            GraphView combinedView = filterController.filter(degreeQuery);
-            graphModel.setVisibleView(combinedView);    //Set the filter result as the visible view
-            printGraphStats("combined", graphModel);
-
+            
             if (includeSubsteps) {
                 export(targetFilePrefix + ".no-layout.pdf", "node filter: degree > 0");
             }
-            
-            
         }
 
+        wp.setCurrentWorkspace(workspace);
 
         //Run YifanHuLayout for 100 passes - The layout always takes the current visible view
         YifanHuLayout layout = new YifanHuLayout(null, new StepDisplacement(1f));
@@ -179,6 +215,12 @@ public class LiveModelRenderer {
             export(targetFilePrefix + ".yifanhu-layout.pdf", "laout: yifanhu");
         }
 
+        graphModel = Lookup.getDefault().lookup(GraphController.class).getModel();
+        AttributeModel attributeModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
+        for (AttributeColumn ac: attributeModel.getEdgeTable().getColumns()){
+        	System.out.println("edge column: " + ac.getTitle());
+        }
+
         //Get Centrality
         GraphDistance distance = new GraphDistance();
         distance.setDirected(true);
@@ -188,33 +230,24 @@ public class LiveModelRenderer {
         m.setUseWeight(false);
         m.execute(graphModel, attributeModel);
 
-        //Rank color by Degree
         Ranking degreeRanking = rankingController.getModel().getRanking(Ranking.NODE_ELEMENT, Ranking.DEGREE_RANKING);
         AbstractSizeTransformer sizeTransformer = (AbstractSizeTransformer) rankingController.getModel().getTransformer(Ranking.NODE_ELEMENT, Transformer.RENDERABLE_SIZE);
-        sizeTransformer.setMinSize(8);
-        sizeTransformer.setMaxSize(20);
-        //rankingController.transform(centralityRanking,sizeTransformer);
-        rankingController.transform(degreeRanking,sizeTransformer);
+        sizeTransformer.setMinSize(10);
+        sizeTransformer.setMaxSize(14);
+        rankingController.transform(degreeRanking, sizeTransformer);
         if (includeSubsteps) {
             export(targetFilePrefix + ".degree-ranked.pdf", "ranking: degree as node size");
         }
 
         //Rank size by centrality
-        //        AttributeColumn centralityColumn = attributeModel.getNodeTable().getColumn(GraphDistance.BETWEENNESS);
-        AttributeColumn centralityColumn = attributeModel.getNodeTable().getColumn(Modularity.MODULARITY_CLASS);
-        Ranking centralityRanking = rankingController.getModel().getRanking(Ranking.NODE_ELEMENT, centralityColumn.getId());
+        AttributeColumn modularityColumn = attributeModel.getNodeTable().getColumn(Modularity.MODULARITY_CLASS);
+        Ranking centralityRanking = rankingController.getModel().getRanking(Ranking.NODE_ELEMENT, modularityColumn.getId());
         AbstractColorTransformer colorTransformer = (AbstractColorTransformer) rankingController.getModel().getTransformer(Ranking.NODE_ELEMENT, Transformer.RENDERABLE_COLOR);
-
         float[] positions = {0f,0.5f,1f};
         colorTransformer.setColorPositions(positions);
         Color[] colors = new Color[]{new Color(0x0000FF), new Color(0x00FF00),new Color(0xFF0000)};
         colorTransformer.setColors(colors);
-        //        colorTransformer.setColors(new Color[]{Color.red, Color.gray, Color.blue, Color.green, Color.yellow, Color.orange});
         rankingController.transform(centralityRanking,colorTransformer);
-
-        if (includeSubsteps) {
-            export(targetFilePrefix + ".color-partitioned.pdf", "partition: modularity as color");
-        }
 
         NoverlapLayoutBuilder nlb = new NoverlapLayoutBuilder();
         NoverlapLayout noverlapLayout = new NoverlapLayout(nlb);
@@ -229,7 +262,36 @@ public class LiveModelRenderer {
             export(targetFilePrefix + ".noverlap-layout.pdf", "layout: reduce overlap");
         }
 
-        export(targetFilePrefix + ".pdf", "bigpicture | live state", (protocol != null) ? "protocol: " + protocol : null);
+        boolean diffTypePresent = false;
+        for (AttributeColumn ac: attributeModel.getEdgeTable().getColumns()){
+        	System.out.println("attribute: " + ac.getTitle() + " " + ac.getId());
+        	if ("diff-type".equals(ac.getTitle())) {
+        		diffTypePresent = true;
+        		System.out.println("diff-type column found");
+        		break;
+        	}
+        }
+        if (diffTypePresent) {
+        	AttributeColumn diffTypeColumn = attributeModel.getEdgeTable().getColumn("diff-type");
+        	Ranking diffTypeRanking = rankingController.getModel().getRanking(Ranking.EDGE_ELEMENT, diffTypeColumn.getId());
+
+        	PartitionController partitionController = Lookup.getDefault().lookup(PartitionController.class);
+        	Partition p = partitionController.buildPartition(diffTypeColumn, graphModel.getGraphVisible());
+        	EdgeColorTransformer edgeColorTransformer = new EdgeColorTransformer();
+//        	edgeColorTransformer.randomizeColors(p);
+        	edgeColorTransformer.getMap().put("new", Color.green);
+        	edgeColorTransformer.getMap().put("lost", Color.gray);
+        	for (Map.Entry<Object, Color> entry: edgeColorTransformer.getMap().entrySet()) {
+        		System.out.println("mapping: " + entry.getKey() + " -> " + entry.getValue());
+        	}
+        	partitionController.transform(p, edgeColorTransformer);
+        }
+
+        if (includeSubsteps) {
+            export(targetFilePrefix + ".color-partitioned.pdf", "partition: modularity as color");
+        }
+
+        export(targetFilePrefix + ".svg", "bigpicture | live state", (protocol != null) ? "protocol: " + protocol : null);
 
         export2gexf(targetFilePrefix + ".gexf");
         export2graphml(targetFilePrefix + ".graphml");
@@ -273,7 +335,7 @@ public class LiveModelRenderer {
         File file = new File(filename);
         toCombine.add(file);
         export2File(file);
-        addTitle(file, title, subtitle);
+//        addTitle(file, title, subtitle);
     }
 
     private void export2gexf(String filename) {
@@ -303,12 +365,22 @@ public class LiveModelRenderer {
 
     private void export2File(File file) {
         ExportController ec = Lookup.getDefault().lookup(ExportController.class);
-        PDFExporter pdfExporter = (PDFExporter) ec.getExporter("pdf");
-        pdfExporter.setLandscape(false);
-        pdfExporter.setPageSize(PageSize.A4);
-
+//        PDFExporter pdfExporter = (PDFExporter) ec.getExporter("pdf");
+//        pdfExporter.setLandscape(false);
+//        pdfExporter.setPageSize(PageSize.A4);
+//
+//        try {
+//            ec.exportFile(file, pdfExporter);
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//            return;
+//        }
+        
+//        File svgFile = new File(file.getName().substring(0, file.getName().lastIndexOf('.')) + ".svg");
+        SVGExporter svgExporter = (SVGExporter) ec.getExporter("svg");
+        svgExporter.setScaleStrokes(true);
         try {
-            ec.exportFile(file, pdfExporter);
+        	ec.exportFile(file, svgExporter);
         } catch (IOException ex) {
             ex.printStackTrace();
             return;

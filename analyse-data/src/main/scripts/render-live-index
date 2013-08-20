@@ -37,7 +37,7 @@ except OSError, e:
 graphs = {}
 for dirpath, dirnames, filenames in os.walk(variant_dir):
     path = dirpath.replace(variant_dir, '').lstrip('/')
-    variant = path.split('/', 1)[0]
+    #variant = path.split('/', 1)[0]
     for filename in filenames:
         if filename == "index.html" and dirpath.endswith('network'):
             href = os.path.join(path, filename)
@@ -51,7 +51,7 @@ for dirpath, dirnames, filenames in os.walk(variant_dir):
             href = os.path.join(path, filename)
             print "---- %s: graphviz/%s/%s" % (href, protocol, layout)
             graphs.setdefault(protocol, []).append( ("graphviz", layout, href) )
-        if filename.endswith("pdf") and "gephi" in filename:
+        if filename.endswith("svg") and "gephi" in filename:
             match = re.search("protocol_([^.]*)", filename)
             protocol = match.group(1) if match else "*"
             href = os.path.join(path, filename)
@@ -66,9 +66,9 @@ with open(index_file, 'w') as index:
     index.write('</head><body><h1>bigpicture | live data | %s</h1>\n' % variant)
 
     index.write('<ul>\n')
-    index.write("""<li><a href='../../../live-state/smallhives.html?source=../data/live-state/model.live.reduced.json&mapping0={"ham":1,"ber":2}&mapping1={"ham":2,"ber":2,"tuv":1}'>small multiple: host level</a></li>\n""")
-    index.write("""<li><a href='../../../live-state/hive.html?source=../data/live-state/model.live.reduced.json&mapping0={"ham":1,"ber":2}'>self-connected: prod vs rest</a></li>\n""")
-    index.write("""<li><a href='../../../live-state/hive.html?source=../data/live-state/model.live.reduced.json&mapping0={"ham":2,"ber":2,"tuv":1}'>self-connected: loc levels</a></li>\n""")
+    index.write('<li><a href=\'../../../live-state/smallhives.html?source=../data/live-state/%s/model.live.reduced.json&mapping0={"ham":1,"ber":2}&mapping1={"ham":2,"ber":2,"tuv":1}\'>small multiple: host level</a></li>\n' % variant)
+    index.write('<li><a href=\'../../../live-state/hive.html?source=../data/live-state/%s/model.live.reduced.json&mapping0={"ham":1,"ber":2}\'>self-connected: prod vs rest</a></li>\n' % variant)
+    index.write('<li><a href=\'../../../live-state/hive.html?source=../data/live-state/%s/model.live.reduced.json&mapping0={"ham":2,"ber":2,"tuv":1}\'>self-connected: loc levels</a></li>\n' % variant)
     index.write('</ul>\n')
 
     index.write('<table><tr><th>protocol</th><td colspan="5">layouts</td></tr>\n')
