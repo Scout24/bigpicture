@@ -12,6 +12,7 @@ import networkx as nx
 from docopt import docopt
 
 from bigpicture import get_config, retrieve_config, init_config, makedirs
+from bigpicture.analysedata.dot import model2json
 
 
 def get_graph_stats(g):
@@ -125,5 +126,10 @@ gexf_file = get_config('live-state', 'model-gexf-file')
 print "---- writing %s" % gexf_file
 makedirs(os.path.dirname(gexf_file))
 nx.write_gexf(diffs, gexf_file)
+
+json_file = get_config('live-state', 'json-file')
+print "---- writing %s" % json_file
+makedirs(os.path.dirname(json_file))
+model2json(diffs, json_file)
 
 print "done."
