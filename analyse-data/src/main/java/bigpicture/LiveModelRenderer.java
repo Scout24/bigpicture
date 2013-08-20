@@ -134,9 +134,9 @@ public class LiveModelRenderer {
             EqualStringFilter arf = new AttributeEqualBuilder.EqualStringFilter(ac);
             arf.init(graphModel.getGraph());
             arf.setPattern(protocol);
-            Query query = filterController.createQuery(arf);
-            GraphView view = filterController.filter(query);
-            graphModel.setVisibleView(view);    //Set the filter result as the visible view
+            Query protocolQuery = filterController.createQuery(arf);
+            GraphView protocolView = filterController.filter(protocolQuery);
+            graphModel.setVisibleView(protocolView);    //Set the filter result as the visible view
             printGraphStats("protocol=" + protocol, graphModel);
             if (includeSubsteps) {
                 export(targetFilePrefix + ".pdf", "edge filter: protocol=" + protocol);
@@ -144,19 +144,21 @@ public class LiveModelRenderer {
             DegreeRangeFilter degreeFilter = new DegreeRangeFilter();
             degreeFilter.init(graphModel.getGraphVisible());
             degreeFilter.setRange(new Range(1, Integer.MAX_VALUE));
-            Query query2 = filterController.createQuery(degreeFilter);
-            GraphView view2 = filterController.filter(query2);
-            graphModel.setVisibleView(view2);
+            Query degreeQuery = filterController.createQuery(degreeFilter);
+            GraphView degreeView = filterController.filter(degreeQuery);
+            graphModel.setVisibleView(degreeView);
             printGraphStats("degree > 0", graphModel);
 
-            filterController.setSubQuery(query2, query);
-            GraphView view3 = filterController.filter(query2);
-            graphModel.setVisibleView(view3);    //Set the filter result as the visible view
+            filterController.setSubQuery(degreeQuery, protocolQuery);
+            GraphView combinedView = filterController.filter(degreeQuery);
+            graphModel.setVisibleView(combinedView);    //Set the filter result as the visible view
             printGraphStats("combined", graphModel);
 
             if (includeSubsteps) {
                 export(targetFilePrefix + ".no-layout.pdf", "node filter: degree > 0");
             }
+            
+            
         }
 
 
