@@ -1,50 +1,84 @@
 #!/usr/bin/env python
 """
 Usage:
-    analyse-model
+    analyse-model [--variant=STRING]
+
+--variant=STRING    variant to analyse [default: all]
 
 """
 import networkx as nx
 
 from docopt import docopt
 
-from bigpicture import retrieve_config
+from bigpicture import get_config, init_config, retrieve_config
 
 arguments = docopt(__doc__)
+variant = arguments.get('--variant')
+init_config({'variant': variant})
 
-gexf_file = retrieve_config('model-gexf-file', arguments, 'live-state')
+protocols_to_render = retrieve_config('protocols-to-render', arguments, 'live-state').split()
+variant_dir = retrieve_config('variant-dir', {}, 'live-state')
 
-g = nx.read_gexf(gexf_file)
 
-timestamps = {}
-for u, v, d in g.edges_iter(data=True):
-    old = timestamps.get(d["timestamp"], 0)
-    timestamps[d["timestamp"]] = old + 1
+print "analysing model"
 
-timeline = [t for t in sorted(timestamps.keys())]
-print "\n".join(["%s: %i" % (t, timestamps[t]) for t in timeline])
+gexf_file = get_config('live-state', 'model-gexf-file')
+print "-- settings"
+print "---- protocols to render: %s" % protocols_to_render
+print "---- variant dir: %s" % variant_dir
 
-subgraphs = {
-    "2013-07-31T12:05:01": nx.create_empty_copy(g),
-    "2013-07-31T13:05:01": nx.create_empty_copy(g)
-}
-for ts, sg in subgraphs.iteritems():
-    print "%s: %s %i %i" % (ts, sg, sg.number_of_nodes(), sg.number_of_edges())
+print "-- analysing protocols"
+for protocol in protocols_to_render:
+    print "---- protocol %s" % protocol
+    init_config({'variant': variant, 'protocol': protocol})
+    gexf_file = get_config('live-state', 'gephi-protocol-gexf-file')
+    print "---- gexf file: %s" % gexf_file
+    g = nx.read_gexf(gexf_file)
 
-for u, v, d in g.edges_iter(data=True):
-    sg = subgraphs.get(d["timestamp"])
-    if sg is None:
-        continue
-    sg.add_edge(u, v, attr_dict=d)
+    print "---- analysing 'modularity class'"
+    modules = {}
+    colors = {}
+    h = nx.DiGraph()
+    for u, v, d in g.edges_iter(data=True):
+        uu = g.node[u]['Modularity Class']
+        vv = g.node[v]['Modularity Class']
+        modules.setdefault(uu, set()).add(u)
+        modules.setdefault(vv, set()).add(v)
+        colors[uu] = g.node[u]['viz']['color']
+        colors[vv] = g.node[v]['viz']['color']
+        if uu != vv:
+            h.add_edge(uu, vv, attr_dict=d)
+    print "------ %i clusters found" % len(modules)
 
-for ts, sg in subgraphs.iteritems():
-    print "%s: %s %i %i" % (ts, sg, sg.number_of_nodes(), sg.number_of_edges())
+    print "---- rendering svg"
+    a = nx.to_agraph(h)
+    for n in a.nodes():
+        init_config({'variant': variant, 'protocol': protocol, 'cluster': int(n)})
+        filename = get_config('live-state', 'clustered-protocol-cluster-html-file')
+        members = sorted(modules[int(n)])
+        with open(filename, 'w') as f:
+            f.write("<h1>protocol %s, cluster %s</h1>" % (protocol, n))
+            f.write("<br/>\n".join(members))
+        n.attr.update(URL=filename)
+        #n.attr.update(tooltip=", ".join(members))
+        #n.attr.update(label="cluster %s" % n)
+        #n.attr.update(label='%i hosts' % len(members))
+        #n.attr.update(label='\\n'.join(members))
+        hosts_per_line = 5
+        n.attr.update(label="\\n".join([" ".join(members[i:i+hosts_per_line]) for i in range(0, len(members), hosts_per_line)]))
+        n.attr.update(fillcolor='#%(r)02x%(g)02x%(b)02x22' % colors[int(n)])
 
-g0 = subgraphs[timeline[0]]
-g1 = subgraphs[timeline[1]]
-gd = g1.copy()
-gd.remove_edges_from(e for e in g0.edges_iter())
-print "%s %i %i" % (gd, gd.number_of_nodes(), gd.number_of_edges())
+    a.graph_attr.update(size='20,15', ratio=.5, bgcolor='transparent') #, model='subset')
+    a.graph_attr.update(ranksep=5)
+    a.node_attr.update(shape='box', color='white', fontsize='6', fontcolor='#ffffff', style='filled')
+    a.edge_attr.update(mindist='1', len='5', splines=True, fontsize='0', arrowsize=.4)
+    a.edge_attr.update(decorate=False, group=True, concentrate=True)
+    a.edge_attr.update(color='#40404030', fontcolor='transparent')
+    for layout in ['neato', 'circo', 'twopi']:
+        init_config({'variant': variant, 'protocol': protocol, 'layout': layout})
+        filename = get_config('live-state', 'clustered-protocol-layout-svg-file')
+        print "------ writing %s" % filename
+        a.draw(filename, prog=layout)
+        a.write("aha.%s.%s.dot" % (protocol, layout))
 
-diff_file = "out/diff.dot"
-nx.drawing.write_dot(gd, diff_file)
+print "done."

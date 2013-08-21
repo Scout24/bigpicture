@@ -59,7 +59,7 @@ def filter(g, key, value, add_attrs=None):
     return h
 
 print "-- variants"
-for variant, key, value in []: #[('last1h', 'timestamp', timestamps[0])]:
+for variant, key, value in [('last1h', 'timestamp', timestamps[0])]:
     init_config({'variant': variant})
     h = filter(g, 'timestamp', timestamps[0])
     print "---- %s: %s" % (variant, get_graph_stats(h))

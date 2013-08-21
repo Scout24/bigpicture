@@ -87,7 +87,8 @@ for node in h.nodes_iter():
     node.attr['origname'] = origname
     if re.match('[a-z]', origname):
         try:
-            name, subnet = origname.split(".", 1)
+            name, _, subnet = origname.partition(".")
+            node.attr['name'] = name
             node.attr['subnet'] = subnet
             if len(name) != 8:
                 continue

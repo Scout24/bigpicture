@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+import urllib2
+import json
+import networkx as nx
+
+from bigpicture import retrieve_config
+
+url = retrieve_config('database-url', {}, 'global')
+print "---- database url: %s" % url
+
+query = """{"query": "START n=node(55000) MATCH n-[r]-m WHERE n.type='host' AND r.input='CONFIG' AND m.type='host' RETURN n.label, r, m.label"}"""
+print "---- query: %s" % query
+
+print "-- requesting dump"
+request = urllib2.Request(
+        "%s/cypher" % url,
+        query,
+        {"Content-Type": "application/json"})
+
+result = json.load(urllib2.urlopen(request))
+
+g = nx.DiGraph()
+
+for edge in result["data"]:
+    source, data, target = edge
+    g.add_edge(source, target, attr_dict=data)
+
+nx.write_gexf(g, "out/config-state.gexf")
+
+print "done."

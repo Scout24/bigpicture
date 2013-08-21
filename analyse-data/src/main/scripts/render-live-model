@@ -41,8 +41,14 @@ print "---- bigpicture jar dir: %s" % bigpicture_jar_dir
 makedirs(variant_dir)
 
 print "-- gephi rendering"
-result = subprocess.call(['java', '-jar', '%s/bigpicture.jar' % bigpicture_jar_dir, gexf_file, gephi_image_prefix] + protocols_to_render)
-print "---- exit code: %i" % result
+#result = subprocess.call(['java', '-jar', '%s/bigpicture.jar' % bigpicture_jar_dir, gexf_file, gephi_image_prefix] + protocols_to_render)
+#print "---- exit code: %i" % result
+
+
+result = subprocess.call(['java', '-jar', '%s/bigpicture.jar' % bigpicture_jar_dir, gexf_file, gephi_image_prefix] + ['nfs'])
+import sys
+sys.exit()
+
 
 print "-- graphviz rendering"
 gm = nx.read_gexf(gexf_file)

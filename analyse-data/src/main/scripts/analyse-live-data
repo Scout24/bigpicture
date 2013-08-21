@@ -1,7 +1,12 @@
 #!/bin/bash
-set -e -E
+set -u -e -E -C -o pipefail
 
 build-live-model
 augment-model
 convert-model
-render-live-model
+diff-live-model
+
+for variant in all last1h last1h-diff; do
+    render-live-model --variant=$variant
+    analyse-model --variant=$variant
+    render-live-index --variant=$variant

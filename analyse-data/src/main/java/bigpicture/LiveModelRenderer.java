@@ -27,6 +27,7 @@ import org.gephi.filters.plugin.attribute.AttributeEqualBuilder;
 import org.gephi.filters.plugin.attribute.AttributeEqualBuilder.EqualStringFilter;
 import org.gephi.filters.plugin.graph.DegreeRangeBuilder.DegreeRangeFilter;
 import org.gephi.graph.api.DirectedGraph;
+import org.gephi.graph.api.Edge;
 import org.gephi.graph.api.Graph;
 import org.gephi.graph.api.GraphController;
 import org.gephi.graph.api.GraphModel;
@@ -46,6 +47,7 @@ import org.gephi.partition.api.Part;
 import org.gephi.partition.api.Partition;
 import org.gephi.partition.api.PartitionController;
 import org.gephi.partition.plugin.EdgeColorTransformer;
+import org.gephi.partition.plugin.NodeColorTransformer;
 import org.gephi.plugins.layout.noverlap.NoverlapLayout;
 import org.gephi.plugins.layout.noverlap.NoverlapLayoutBuilder;
 import org.gephi.preview.api.PreviewController;
@@ -116,11 +118,11 @@ public class LiveModelRenderer {
         pps.putValue(PreviewProperty.NODE_BORDER_WIDTH, 0);
         pps.putValue(PreviewProperty.SHOW_NODE_LABELS, Boolean.TRUE);
 //        pps.putValue(PreviewProperty.EDGE_COLOR, new EdgeColor(Color.LIGHT_GRAY));
-        pps.putValue(PreviewProperty.EDGE_THICKNESS, new Float(2f));
-        pps.putValue(PreviewProperty.NODE_LABEL_FONT, model.getProperties().getFontValue(PreviewProperty.NODE_LABEL_FONT).deriveFont(8));
+        pps.putValue(PreviewProperty.EDGE_THICKNESS, new Float(1.2f));
+        pps.putValue(PreviewProperty.NODE_LABEL_FONT, model.getProperties().getFontValue(PreviewProperty.NODE_LABEL_FONT).deriveFont(10));
         pps.putValue(PreviewProperty.NODE_LABEL_PROPORTIONAL_SIZE, Boolean.FALSE);
         pps.putValue(PreviewProperty.EDGE_CURVED, Boolean.FALSE);
-        pps.putValue(PreviewProperty.ARROW_SIZE, 1f);
+//        pps.putValue(PreviewProperty.ARROW_SIZE, 1f);
 
         //Import file
         Container container;
@@ -198,6 +200,16 @@ public class LiveModelRenderer {
 
         wp.setCurrentWorkspace(workspace);
 
+        AttributeModel attributeModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
+        boolean diffTypePresent = false;
+        for (AttributeColumn ac: attributeModel.getEdgeTable().getColumns()){
+        	if ("diff-type".equals(ac.getTitle())) {
+        		diffTypePresent = true;
+        		System.out.println("diff-type column found");
+        		break;
+        	}
+        }
+
         //Run YifanHuLayout for 100 passes - The layout always takes the current visible view
         YifanHuLayout layout = new YifanHuLayout(null, new StepDisplacement(1f));
         layout.setGraphModel(graphModel);
@@ -207,7 +219,8 @@ public class LiveModelRenderer {
         layout.setConverged(true);
         layout.setAdaptiveCooling(true);
         layout.initAlgo();
-        for (int i = 0; i < 100 && layout.canAlgo(); i++) {
+        int loops = (diffTypePresent ? 50 : 100);
+        for (int i = 0; i < loops && layout.canAlgo(); i++) {
             layout.goAlgo();
         }
         layout.endAlgo();
@@ -216,7 +229,6 @@ public class LiveModelRenderer {
         }
 
         graphModel = Lookup.getDefault().lookup(GraphController.class).getModel();
-        AttributeModel attributeModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
         for (AttributeColumn ac: attributeModel.getEdgeTable().getColumns()){
         	System.out.println("edge column: " + ac.getTitle());
         }
@@ -234,7 +246,7 @@ public class LiveModelRenderer {
         AbstractSizeTransformer sizeTransformer = (AbstractSizeTransformer) rankingController.getModel().getTransformer(Ranking.NODE_ELEMENT, Transformer.RENDERABLE_SIZE);
         sizeTransformer.setMinSize(10);
         sizeTransformer.setMaxSize(14);
-        rankingController.transform(degreeRanking, sizeTransformer);
+//        rankingController.transform(degreeRanking, sizeTransformer);
         if (includeSubsteps) {
             export(targetFilePrefix + ".degree-ranked.pdf", "ranking: degree as node size");
         }
@@ -247,7 +259,7 @@ public class LiveModelRenderer {
         colorTransformer.setColorPositions(positions);
         Color[] colors = new Color[]{new Color(0x0000FF), new Color(0x00FF00),new Color(0xFF0000)};
         colorTransformer.setColors(colors);
-        rankingController.transform(centralityRanking,colorTransformer);
+//        rankingController.transform(centralityRanking,colorTransformer);
 
         NoverlapLayoutBuilder nlb = new NoverlapLayoutBuilder();
         NoverlapLayout noverlapLayout = new NoverlapLayout(nlb);
@@ -261,30 +273,43 @@ public class LiveModelRenderer {
         if (includeSubsteps) {
             export(targetFilePrefix + ".noverlap-layout.pdf", "layout: reduce overlap");
         }
-
-        boolean diffTypePresent = false;
-        for (AttributeColumn ac: attributeModel.getEdgeTable().getColumns()){
-        	System.out.println("attribute: " + ac.getTitle() + " " + ac.getId());
-        	if ("diff-type".equals(ac.getTitle())) {
-        		diffTypePresent = true;
-        		System.out.println("diff-type column found");
-        		break;
-        	}
-        }
+        
         if (diffTypePresent) {
         	AttributeColumn diffTypeColumn = attributeModel.getEdgeTable().getColumn("diff-type");
-        	Ranking diffTypeRanking = rankingController.getModel().getRanking(Ranking.EDGE_ELEMENT, diffTypeColumn.getId());
-
         	PartitionController partitionController = Lookup.getDefault().lookup(PartitionController.class);
-        	Partition p = partitionController.buildPartition(diffTypeColumn, graphModel.getGraphVisible());
+        	Partition p = partitionController.buildPartition(diffTypeColumn, graphModel.getGraph());
+        	for (Part<Edge> part: p.getParts()) {
+        		System.out.println("part " + part.getDisplayName() + " " + Math.round(100 * part.getPercentage()) + "%");
+        	}
         	EdgeColorTransformer edgeColorTransformer = new EdgeColorTransformer();
-//        	edgeColorTransformer.randomizeColors(p);
         	edgeColorTransformer.getMap().put("new", Color.green);
         	edgeColorTransformer.getMap().put("lost", Color.gray);
         	for (Map.Entry<Object, Color> entry: edgeColorTransformer.getMap().entrySet()) {
         		System.out.println("mapping: " + entry.getKey() + " -> " + entry.getValue());
         	}
-        	partitionController.transform(p, edgeColorTransformer);
+        	for (Part<Edge> part: p.getParts()) {
+        		Color color = edgeColorTransformer.getMap().get(part.getValue());
+                if (color == null) {
+                    color = Color.black;
+                }
+                part.setColor(color);
+                System.out.println("setting color " + color);
+                float r = color.getRed() / 255f;
+                float g = color.getGreen() / 255f;
+                float b = color.getBlue() / 255f;
+     
+                for (Edge edge : part.getObjects()) {
+                	System.out.println("edge " + edge);
+                    edge.getEdgeData().setColor(r, g, b);
+                }
+        	}                
+//        	edgeColorTransformer.transform(p);
+//        	partitionController.transform(p, edgeColorTransformer);
+        }
+        for (Edge edge: graphModel.getGraph().getEdges()) {
+        	System.out.println("edge " + edge);
+        	System.out.println("edge " + edge.getEdgeData().getAttributes());
+
         }
 
         if (includeSubsteps) {
@@ -296,7 +321,7 @@ public class LiveModelRenderer {
         export2gexf(targetFilePrefix + ".gexf");
         export2graphml(targetFilePrefix + ".graphml");
 
-        renderSigmaJs(protocol, graphModel, targetFilePrefix);
+//        renderSigmaJs(protocol, graphModel, targetFilePrefix);
 
     }
 
