@@ -36,6 +36,9 @@ fi
 pip install docopt
 pip install py2neo
 pip install networkx
+pip install numpy
+pip install --upgrade distribute
+pip install matplotlib
 
 cat <<WELCOME
 

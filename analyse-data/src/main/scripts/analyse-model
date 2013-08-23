@@ -60,10 +60,6 @@ for protocol in protocols_to_render:
             f.write("<h1>protocol %s, cluster %s</h1>" % (protocol, n))
             f.write("<br/>\n".join(members))
         n.attr.update(URL=filename)
-        #n.attr.update(tooltip=", ".join(members))
-        #n.attr.update(label="cluster %s" % n)
-        #n.attr.update(label='%i hosts' % len(members))
-        #n.attr.update(label='\\n'.join(members))
         hosts_per_line = 5
         n.attr.update(label="\\n".join([" ".join(members[i:i+hosts_per_line]) for i in range(0, len(members), hosts_per_line)]))
         n.attr.update(fillcolor='#%(r)02x%(g)02x%(b)02x22' % colors[int(n)])
