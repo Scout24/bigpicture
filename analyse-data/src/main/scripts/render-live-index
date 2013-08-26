@@ -57,6 +57,14 @@ for dirpath, dirnames, filenames in os.walk(variant_dir):
             href = os.path.join(path, filename)
             print "---- %s: gephi/%s/yifanhu" % (href, protocol)
             graphs.setdefault(protocol, []).append( ("gephi", "yifanhu", href) )
+        if filename.endswith("svg") and "clustered" in filename:
+            match = re.search("protocol_([^.]*)", filename)
+            protocol = match.group(1) if match else "*"
+            match = re.search("layout_([^.]*)", filename)
+            layout = match.group(1)
+            href = os.path.join(path, filename)
+            print "---- %s: clustered/%s/%s" % (href, protocol, layout)
+            graphs.setdefault(protocol, []).append( ("clustered", layout, href) )
 
 with open(index_file, 'w') as index:
     index.write('<html><head><title>bigpicture | live data | %s</title>\n' % variant)
@@ -76,7 +84,7 @@ with open(index_file, 'w') as index:
         links = graphs[protocol]
         index.write('<tr><th>%s</th>\n' % protocol)
         for layouter, variant, href in sorted(links):
-            index.write('<td><a href="%s">%s</a></td>\n' % (href, variant))
+            index.write('<td><a href="%s">%s: %s</a></td>\n' % (href, layouter, variant))
         index.write('</tr>\n')
     index.write('</table>\n')
 
