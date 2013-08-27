@@ -31,6 +31,8 @@ import org.gephi.graph.api.GraphModel;
 import org.gephi.graph.api.GraphView;
 import org.gephi.io.exporter.api.ExportController;
 import org.gephi.io.exporter.preview.PDFExporter;
+import org.gephi.io.exporter.preview.SVGExporter;
+import org.gephi.io.exporter.spi.Exporter;
 import org.gephi.io.exporter.spi.GraphExporter;
 import org.gephi.io.importer.api.Container;
 import org.gephi.io.importer.api.EdgeDefault;
@@ -102,9 +104,9 @@ public class LiveModelRenderer {
         PreviewProperties pps = model.getProperties();
         pps.putValue(PreviewProperty.NODE_BORDER_WIDTH, 0);
         //        pps.putValue(PreviewProperty.NODE_OPACITY, .9f);
-        pps.putValue(PreviewProperty.SHOW_NODE_LABELS, Boolean.TRUE);
-        pps.putValue(PreviewProperty.EDGE_COLOR, new EdgeColor(Color.LIGHT_GRAY));
-        pps.putValue(PreviewProperty.EDGE_THICKNESS, new Float(0.1f));
+        pps.putValue(PreviewProperty.SHOW_NODE_LABELS, Boolean.FALSE);
+        pps.putValue(PreviewProperty.EDGE_COLOR, new EdgeColor(Color.GRAY));
+        pps.putValue(PreviewProperty.EDGE_THICKNESS, new Float(3f));
         pps.putValue(PreviewProperty.NODE_LABEL_FONT, model.getProperties().getFontValue(PreviewProperty.NODE_LABEL_FONT).deriveFont(8));
         pps.putValue(PreviewProperty.EDGE_CURVED, Boolean.TRUE);
 
@@ -157,8 +159,8 @@ public class LiveModelRenderer {
             if (includeSubsteps) {
                 export(targetFilePrefix + ".no-layout.pdf", "node filter: degree > 0");
             }
-            
-            
+
+
         }
 
 
@@ -166,12 +168,12 @@ public class LiveModelRenderer {
         YifanHuLayout layout = new YifanHuLayout(null, new StepDisplacement(1f));
         layout.setGraphModel(graphModel);
         layout.resetPropertiesValues();
-        layout.setOptimalDistance(150f);
+        layout.setOptimalDistance(160f);
         layout.setStepRatio(1f);
         layout.setConverged(true);
         layout.setAdaptiveCooling(true);
         layout.initAlgo();
-        for (int i = 0; i < 100 && layout.canAlgo(); i++) {
+        for (int i = 0; i < 200 && layout.canAlgo(); i++) {
             layout.goAlgo();
         }
         layout.endAlgo();
@@ -191,7 +193,7 @@ public class LiveModelRenderer {
         //Rank color by Degree
         Ranking degreeRanking = rankingController.getModel().getRanking(Ranking.NODE_ELEMENT, Ranking.DEGREE_RANKING);
         AbstractSizeTransformer sizeTransformer = (AbstractSizeTransformer) rankingController.getModel().getTransformer(Ranking.NODE_ELEMENT, Transformer.RENDERABLE_SIZE);
-        sizeTransformer.setMinSize(8);
+        sizeTransformer.setMinSize(12);
         sizeTransformer.setMaxSize(20);
         //rankingController.transform(centralityRanking,sizeTransformer);
         rankingController.transform(degreeRanking,sizeTransformer);
@@ -230,6 +232,7 @@ public class LiveModelRenderer {
         }
 
         export(targetFilePrefix + ".pdf", "bigpicture | live state", (protocol != null) ? "protocol: " + protocol : null);
+        export2svg(targetFilePrefix + ".svg");
 
         export2gexf(targetFilePrefix + ".gexf");
         export2graphml(targetFilePrefix + ".graphml");
@@ -301,10 +304,21 @@ public class LiveModelRenderer {
         }
     }
 
+    private void export2svg(String filename) {
+        ExportController ec = Lookup.getDefault().lookup(ExportController.class);
+        SVGExporter e = (SVGExporter) ec.getExporter("svg");
+        try {
+            ec.exportFile(new File(filename), e);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return;
+        }
+    }
+    
     private void export2File(File file) {
         ExportController ec = Lookup.getDefault().lookup(ExportController.class);
         PDFExporter pdfExporter = (PDFExporter) ec.getExporter("pdf");
-        pdfExporter.setLandscape(false);
+        pdfExporter.setLandscape(true);
         pdfExporter.setPageSize(PageSize.A4);
 
         try {
