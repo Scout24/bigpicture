@@ -106,9 +106,9 @@ public class LiveModelRenderer {
         //        pps.putValue(PreviewProperty.NODE_OPACITY, .9f);
         pps.putValue(PreviewProperty.SHOW_NODE_LABELS, Boolean.FALSE);
         pps.putValue(PreviewProperty.EDGE_COLOR, new EdgeColor(Color.GRAY));
-        pps.putValue(PreviewProperty.EDGE_THICKNESS, new Float(3f));
+        pps.putValue(PreviewProperty.EDGE_THICKNESS, new Float(1f));
         pps.putValue(PreviewProperty.NODE_LABEL_FONT, model.getProperties().getFontValue(PreviewProperty.NODE_LABEL_FONT).deriveFont(8));
-        pps.putValue(PreviewProperty.EDGE_CURVED, Boolean.TRUE);
+        pps.putValue(PreviewProperty.EDGE_CURVED, Boolean.FALSE);
 
         //Import file
         Container container;
