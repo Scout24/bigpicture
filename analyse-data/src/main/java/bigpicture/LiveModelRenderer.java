@@ -168,12 +168,12 @@ public class LiveModelRenderer {
         YifanHuLayout layout = new YifanHuLayout(null, new StepDisplacement(1f));
         layout.setGraphModel(graphModel);
         layout.resetPropertiesValues();
-        layout.setOptimalDistance(160f);
+        layout.setOptimalDistance(150f);
         layout.setStepRatio(1f);
         layout.setConverged(true);
         layout.setAdaptiveCooling(true);
         layout.initAlgo();
-        for (int i = 0; i < 200 && layout.canAlgo(); i++) {
+        for (int i = 0; i < 300 && layout.canAlgo(); i++) {
             layout.goAlgo();
         }
         layout.endAlgo();
@@ -314,7 +314,7 @@ public class LiveModelRenderer {
             return;
         }
     }
-    
+
     private void export2File(File file) {
         ExportController ec = Lookup.getDefault().lookup(ExportController.class);
         PDFExporter pdfExporter = (PDFExporter) ec.getExporter("pdf");
