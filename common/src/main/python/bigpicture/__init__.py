@@ -29,9 +29,12 @@ def is_blacklisted(host):
 def get_config(section, key):
     global config
     if not config:
-        config = ConfigParser.ConfigParser(allow_no_value=True)
+        config = ConfigParser.ConfigParser()
         config.readfp(open(SETTINGS_FILE))
-    return config.get(section, key)
+    try:
+        return config.get(section, key)
+    except:
+        return None
 
 
 def retrieve_config(key, arguments, config_section):
@@ -43,5 +46,5 @@ def retrieve_config(key, arguments, config_section):
 
 def init_config(defaults):
     global config
-    config = ConfigParser.ConfigParser(defaults=defaults, allow_no_value=True)
+    config = ConfigParser.ConfigParser(defaults=defaults)
     config.readfp(open(SETTINGS_FILE))
